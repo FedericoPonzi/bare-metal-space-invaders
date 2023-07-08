@@ -1,7 +1,8 @@
 use crate::framebuffer::color::{BLACK_COLOR, WHITE_COLOR};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::{HeroMovementDirection, StdFrameBuffer};
+use crate::{HeroMovementDirection, StdFrameBuffer, HERO};
+use std::mem;
 
 const HERO_MOVEMENT_OFFSET: u32 = 10;
 const SHOOT_MOVEMENT_OFFSET: u32 = 10;

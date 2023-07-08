@@ -15,11 +15,25 @@ use crate::framebuffer::fb_trait::FrameBufferInterface;
 use framebuffer::coordinates::Coordinates;
 use time::TimeManagerInterface;
 
-const ALIEN: &[u8; 5336] =
+const ENEMY: &[u8; 5336] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");
+const ENEMY_WIDTH: u32 = 46;
+const ENEMY_HEIGHT: u32 = 29;
+
+const HERO: &[u8; 5336] =
+    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");
+const HERO_WIDTH: u32 = 46;
+const HERO_HEIGHT: u32 = 29;
+
+const SHOOT: &[u8; 5336] =
+    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");
+const SHOOT_WIDTH: u32 = 46;
+const SHOOT_HEIGHT: u32 = 29;
 
 pub fn run_game(mut fb: StdFrameBuffer) {
-    init_game(&mut fb);
+    loop {
+        init_game(&mut fb);
+    }
 }
 
 const ALIEN_ROWS: u32 = 4;
@@ -27,23 +41,21 @@ const ALIEN_COLS: u32 = 15;
 const TOTAL_ENEMIES: usize = (ALIEN_ROWS * ALIEN_COLS) as usize;
 
 fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
-    let enemy_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(ALIEN) };
-    let enemy_width = 46;
-    let enemy_height = 29;
+    let enemy_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(ENEMY) };
 
     let mut enemies = [Enemy {
         structure: ActorStructure {
             sprite: enemy_sprite,
-            width: enemy_width,
-            height: enemy_height,
+            width: ENEMY_WIDTH,
+            height: ENEMY_HEIGHT,
             alive: true,
             coordinates: Coordinates::new(0, 0),
         },
     }; TOTAL_ENEMIES];
     for x in 0..ALIEN_COLS {
-        let offset_x = enemy_width * x + (10 * x);
+        let offset_x = ENEMY_WIDTH * x + (10 * x);
         for y in 0..ALIEN_ROWS {
-            let offset_y = enemy_height * y;
+            let offset_y = ENEMY_HEIGHT * y;
             enemies[(y * ALIEN_COLS + x) as usize].structure.coordinates =
                 Coordinates::new(offset_x, offset_y);
         }
@@ -52,9 +64,8 @@ fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
 }
 
 fn init_game(fb: &mut StdFrameBuffer) {
-    let alien: &[u32; 5336 / 4] = unsafe { mem::transmute(ALIEN) };
-    let alien_width = 46;
-    let alien_height = 29;
+    let hero_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(HERO) };
+    let shoot_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(SHOOT) };
     let mut aliens: [Enemy; TOTAL_ENEMIES] = init_enemies();
 
     const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 10;
@@ -62,9 +73,9 @@ fn init_game(fb: &mut StdFrameBuffer) {
     let mut shoots: Vec<Shoot> = Vec::new();
     let mut hero = Hero {
         structure: ActorStructure {
-            sprite: alien,
-            width: alien_width,
-            height: alien_height,
+            sprite: hero_sprite,
+            width: HERO_WIDTH,
+            height: HERO_HEIGHT,
             alive: true,
             coordinates: Coordinates::new(1000, 1000),
         },
@@ -89,9 +100,9 @@ fn init_game(fb: &mut StdFrameBuffer) {
                 Key::Space => {
                     let shoot = Shoot {
                         structure: ActorStructure {
-                            sprite: alien,
-                            width: alien_width,
-                            height: alien_height,
+                            sprite: shoot_sprite,
+                            width: SHOOT_WIDTH,
+                            height: SHOOT_HEIGHT,
                             alive: true,
                             coordinates: Coordinates::new(
                                 hero.structure.coordinates.x,
@@ -118,12 +129,12 @@ fn init_game(fb: &mut StdFrameBuffer) {
         fb.clear_screen();
         let offset = 10 * direction;
         for x in 0..ALIEN_COLS {
-            let offset_x = alien_width * x + (offset + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
+            let offset_x = ENEMY_WIDTH * x + (offset + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
             for y in 0..ALIEN_ROWS {
-                let offset_y = alien_height * y + offset_y;
-                if aliens[(y * ALIEN_COLS + x) as usize].structure.alive {
-                    aliens[(y * ALIEN_COLS + x) as usize]
-                        .move_to(Coordinates::new(offset_x, offset_y));
+                let offset_y = ENEMY_HEIGHT * y + offset_y;
+                let index = (y * ALIEN_COLS + x) as usize;
+                if aliens[index].structure.alive {
+                    aliens[index].move_to(Coordinates::new(offset_x, offset_y));
                 }
             }
         }
@@ -193,8 +204,6 @@ fn init_game(fb: &mut StdFrameBuffer) {
             direction_index = -direction_index;
             offset_y += 10;
         }
-
-        //time::time_manager().wait(Duration::from_millis(100));
     }
 }
 
