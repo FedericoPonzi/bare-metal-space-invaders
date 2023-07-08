@@ -1,0 +1,12 @@
+[package]
+name = "space_invaders"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["dep:minifb"]
+
+[dependencies]
+micromath = { version = "2.0.0" }
+minifb = {version = "0.24", optional = true }
+
