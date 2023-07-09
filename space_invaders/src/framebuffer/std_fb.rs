@@ -1,15 +1,16 @@
-use crate::framebuffer::color::Color;
+use crate::actor::{Shoot, ShootOwner};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Pixel;
-use minifb::{Window, WindowOptions};
+use crate::HeroMovementDirection;
+use minifb::{Key, Window, WindowOptions};
 
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
 const MARGIN: usize = 30;
 
 pub struct StdFrameBuffer {
-    pub(crate) window: minifb::Window,
+    pub(crate) window: Window,
     buffer: Vec<u32>,
 }
 
@@ -35,7 +36,7 @@ impl StdFrameBuffer {
 
 impl FrameBufferInterface for StdFrameBuffer {
     fn use_pixel(&mut self, pixel: Pixel) {
-        self.buffer[(WIDTH * pixel.point.y as usize + pixel.point.x as usize)] =
+        self.buffer[WIDTH * pixel.point.y as usize + pixel.point.x as usize] =
             pixel.color.as_rgb_u32();
     }
 
@@ -44,7 +45,7 @@ impl FrameBufferInterface for StdFrameBuffer {
             let y = pos / width;
             let x = pos % width;
             let (x, y) = (x + top_left.x, y + top_left.y);
-            self.buffer[(WIDTH * y as usize + x as usize)] = image[pos as usize];
+            self.buffer[WIDTH * y as usize + x as usize] = image[pos as usize];
         }
     }
 
@@ -57,5 +58,35 @@ impl FrameBufferInterface for StdFrameBuffer {
         for i in self.buffer.iter_mut() {
             *i = 0;
         }
+    }
+
+    fn get_input_keys(
+        &self,
+        hero_coordinates: &Coordinates,
+    ) -> (HeroMovementDirection, Option<Shoot>) {
+        let mut hero_movement_direction = HeroMovementDirection::Still;
+        let mut shoot = None;
+        for key in self.window.get_keys() {
+            match key {
+                Key::A | Key::Left => {
+                    hero_movement_direction = HeroMovementDirection::Left;
+                }
+                Key::D | Key::Right => {
+                    hero_movement_direction = HeroMovementDirection::Right;
+                }
+                Key::Space => {
+                    let new_shoot = Shoot::new(
+                        Coordinates::new(hero_coordinates.x, hero_coordinates.y - 20),
+                        ShootOwner::Hero,
+                    );
+                    println!("pew!");
+                    shoot = Some(new_shoot);
+                }
+                _ => {
+                    hero_movement_direction = HeroMovementDirection::Still;
+                }
+            }
+        }
+        (hero_movement_direction, shoot)
     }
 }

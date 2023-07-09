@@ -1,6 +1,8 @@
+use crate::actor::Shoot;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Pixel;
+use crate::HeroMovementDirection;
 use micromath::F32;
 
 pub trait FrameBufferInterface {
@@ -76,7 +78,19 @@ pub trait FrameBufferInterface {
 
     /// display a pixel
     fn use_pixel(&mut self, pixel: Pixel);
+
+    /// draw the image to the local buffer. It needs a call to update in order to show it on screen.
     fn display_image(&mut self, top_left: Coordinates, image: &[u32], width: u32);
+
+    // draw the local buffer of the framebuffer to the screen
     fn update(&mut self);
+
+    // clear the screen (i.e. clear the framebuffer)
     fn clear_screen(&mut self);
+
+    // get input from keyboard
+    fn get_input_keys(
+        &self,
+        hero_coordinates: &Coordinates,
+    ) -> (HeroMovementDirection, Option<Shoot>);
 }

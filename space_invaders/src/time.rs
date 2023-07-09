@@ -1,4 +1,4 @@
-use std::time::Duration;
+use core::time::Duration;
 
 pub trait TimeManagerInterface {
     fn wait(&self, d: Duration);
@@ -12,6 +12,6 @@ pub struct TimeManager {}
 
 impl TimeManagerInterface for TimeManager {
     fn wait(&self, d: Duration) {
-        std::thread::sleep(d);
+        //std::thread::sleep(d);
     }
 }

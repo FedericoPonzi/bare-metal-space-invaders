@@ -4,8 +4,6 @@ pub struct Coordinates {
     pub(crate) y: u32,
 }
 
-impl Coordinates {}
-
 impl Coordinates {
     #[inline(always)]
     pub(crate) fn new(x: u32, y: u32) -> Self {
