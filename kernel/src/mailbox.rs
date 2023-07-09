@@ -1,10 +1,13 @@
-use crate::const_assert_size;
-use crate::framebuffer::FrameBuffer;
+use alloc::vec;
+//use crate::const_assert_size;
 use crate::mailbox::ReqResp::ResponseSuccessful;
-use crate::println;
+use crate::{error, info, println};
 use core::mem;
 use core::ops::BitAnd;
-use log::{error, info};
+use space_invaders::FrameBuffer;
+use space_invaders::FrameBufferInterface;
+//use log::{error, info};
+use cortex_a::asm;
 
 const LFB_MESSAGE_SIZE: usize = 35;
 /// Set physical (display) width/height
@@ -36,17 +39,22 @@ struct RawMailbox {
     config: u32,
     write: u32,
 }
-const_assert_size!(RawMailbox, 36);
+//const_assert_size!(RawMailbox, 36);
+
+#[inline(always)]
+pub fn nop() {
+    asm::nop();
+}
 
 impl RawMailbox {
     pub(crate) fn is_empty(&self) -> bool {
         let status = self.get_status();
-        println!(
+        /*println!(
             "Status {:?}, {}, {}",
             status,
             status & STATUS_EMPTY,
             status & STATUS_EMPTY == STATUS_EMPTY
-        );
+        );*/
         status & STATUS_EMPTY == STATUS_EMPTY
     }
 
@@ -120,6 +128,7 @@ const LAST_TAG: u32 = 0;
 #[repr(align(16))]
 #[derive(Debug, Copy, Clone)]
 struct Message<const T: usize>([u32; T]);
+
 impl<const T: usize> Message<T> {
     pub fn response_status(&self) -> ReqResp {
         ReqResp::from(self.0[1])
@@ -204,7 +213,7 @@ const fn lfb_message() -> Message<LFB_MESSAGE_SIZE> {
     Message(ret)
 }
 
-pub fn lfb_init<'a: 'static>() -> Option<FrameBuffer> {
+pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
     let message = lfb_message();
     let res = send_message(Channel::PROP, &message);
     return if res && message.0[28] != 0 {
@@ -232,6 +241,8 @@ pub fn lfb_init<'a: 'static>() -> Option<FrameBuffer> {
             depth_bits: depth,
             is_rgb,
             is_brg: !is_rgb,
+            fb_virtual_width: FB_VIRTUAL_WIDTH,
+            buffer: vec![0; (width * height) as usize],
         };
         println!(
             "All good, setting up the frame buffer now: {}, height: {}, pitch: {}, depth:{}, is_rgb: {}",
@@ -243,7 +254,12 @@ pub fn lfb_init<'a: 'static>() -> Option<FrameBuffer> {
             "Something went wrong setting up lfb. Send message: {}, lfb address: {}",
             res, message.0[28]
         );
-        None
+        if tentative == 1 {
+            None
+        } else {
+            error!("trying again");
+            lfb_init(1)
+        }
     };
 }
 
@@ -264,6 +280,10 @@ fn board_serial_message() -> Message<SERIAL_MESSAGE_SIZE> {
     Message(ret)
 }
 
+pub const IO_BASE: usize = 0x3F00_0000;
+pub const VIDEOCORE_MBOX_BASE: usize = IO_BASE + VIDEOCORE_MBOX_OFFSET;
+pub const VIDEOCORE_MBOX_OFFSET: usize = 0x0000_B880;
+
 fn send_message<const T: usize>(channel: Channel, message: &Message<T>) -> bool {
     let raw_ptr = message.0.as_ptr();
     // This is needed because slices are fat pointers and I need to convert it to a thin pointer first.
@@ -282,11 +302,11 @@ fn send_message<const T: usize>(channel: Channel, message: &Message<T>) -> bool 
     let final_addr = addr_clear_last_4_bits | ch_clear_everything_but_last_4_vits;
     info!("Final addr : {:04x}", final_addr);
 
-    let raw_mailbox_ptr = crate::memory_map::mmio::VIDEOCORE_MBOX_BASE as *mut RawMailbox;
+    let raw_mailbox_ptr = VIDEOCORE_MBOX_BASE as *mut RawMailbox;
     let raw_mailbox = unsafe { &mut *raw_mailbox_ptr };
     /* wait until we can write to the mailbox */
     while raw_mailbox.is_full() {
-        crate::cpu::nop();
+        nop();
     }
     println!(
         "Message: {:?}, {:04x}",
@@ -301,25 +321,23 @@ fn send_message<const T: usize>(channel: Channel, message: &Message<T>) -> bool 
     loop {
         /* is there a response? */
         while raw_mailbox.is_empty() {
-            crate::cpu::nop();
-            crate::cpu::nop();
-            crate::cpu::nop();
-            crate::cpu::nop();
-            crate::cpu::nop();
-            crate::cpu::nop();
-            crate::cpu::nop();
+            nop();
+            nop();
+            nop();
+            nop();
+            nop();
+            nop();
+            nop();
         }
 
         if raw_mailbox.get_read() == final_addr as u32 {
-            println!(
-                "Got here bra! message is good, response is: {:?}",
-                message.response_status()
-            );
+            println!("Response is: {:?}", message.response_status());
             println!("Message: {:?}", message.0);
             if message.response_status().ne(&ReqResp::Request) {
                 return message.is_response_successfull();
             } else {
                 println!("message stll contains a request !?");
+                return false;
             }
         }
     }

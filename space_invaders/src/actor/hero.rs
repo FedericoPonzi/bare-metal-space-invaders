@@ -1,7 +1,7 @@
 use crate::actor::{Actor, ActorStructure};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::HeroMovementDirection;
-use std::mem;
+use core::mem;
 
 const HERO: &[u8; 5336] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");

@@ -9,7 +9,12 @@ edition = "2021"
 tock-registers = { version = "0.8.x", default-features = false, features = ["register_types"]}
 cortex-a = "~8.1"
 space_invaders = { path = "../space_invaders", features= ["no_std"] }
+bitflags = "2.3"
+log = "0.4.19"
+linked_list_allocator = "0.10"
 
+[profile.release]
+lto = true
 # Platform specific dependencies
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 aarch64-cpu = { version = "9.x.x" }

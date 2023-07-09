@@ -37,9 +37,6 @@ SECTIONS
     .rodata : ALIGN(8) { *(.rodata*) } :segment_rx
     .got    : ALIGN(8) { *(.got)     } :segment_rx
 
-    /***********************************************************************************************
-    * Data + BSS
-    ***********************************************************************************************/
     .data : { *(.data*) } :segment_rw
 
     /* Section is zeroed in pairs of u64. Align start and end to 16 bytes */
@@ -50,4 +47,9 @@ SECTIONS
         . = ALIGN(16);
         __bss_end_exclusive = .;
     } :NONE
+
+	__bss_sec_end = .;
+	__text_end = .;
+
+    /DISCARD/ : { *(.comment*) }
 }

@@ -3,6 +3,7 @@ use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Pixel;
 use crate::HeroMovementDirection;
+use alloc::vec::Vec;
 use micromath::F32;
 
 pub trait FrameBufferInterface {
@@ -76,17 +77,31 @@ pub trait FrameBufferInterface {
         }
     }
 
-    /// display a pixel
-    fn use_pixel(&mut self, pixel: Pixel);
+    fn raw_buffer(&mut self) -> &mut [u32];
+    fn width(&self) -> usize;
+    fn use_pixel(&mut self, pixel: Pixel) {
+        let width = self.width();
+        self.raw_buffer()[width * pixel.point.y as usize + pixel.point.x as usize] =
+            pixel.color.as_rgb_u32();
+    }
 
-    /// draw the image to the local buffer. It needs a call to update in order to show it on screen.
-    fn display_image(&mut self, top_left: Coordinates, image: &[u32], width: u32);
+    fn display_image(&mut self, top_left: Coordinates, image: &[u32], width: u32) {
+        let fb_width = self.width();
+        for pos in 0..image.len() as u32 {
+            let y = pos / width;
+            let x = pos % width;
+            let (x, y) = (x + top_left.x, y + top_left.y);
+            self.raw_buffer()[fb_width * y as usize + x as usize] = image[pos as usize];
+        }
+    }
+    fn clear_screen(&mut self) {
+        for i in self.raw_buffer().iter_mut() {
+            *i = 0;
+        }
+    }
 
     // draw the local buffer of the framebuffer to the screen
     fn update(&mut self);
-
-    // clear the screen (i.e. clear the framebuffer)
-    fn clear_screen(&mut self);
 
     // get input from keyboard
     fn get_input_keys(

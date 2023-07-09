@@ -5,12 +5,12 @@ TARGET            = aarch64-unknown-none-softfloat
 KERNEL_BIN        = kernel8.img
 QEMU_BINARY       = qemu-system-aarch64
 QEMU_MACHINE_TYPE = raspi3
-QEMU_RELEASE_ARGS = -serial stdio -display none
+QEMU_RELEASE_ARGS = -serial stdio -display none -vnc :5
 # Assembly mode:
 #QEMU_RELEASE_ARGS = -d in_asm -display none
-LINKER_FILE       = $(shell pwd)/kernel/src/bsp/raspberrypi/linker.ld
+LINKER_FILE       = $(shell pwd)/linker/rpi_3b+.ld
 RUSTC_MISC_ARGS   = -C target-cpu=cortex-a53
-BIN_NAME          = iris-os
+BIN_NAME          = bare-metal-spaceinvaders
 
 # Export for build.rs
 export LINKER_FILE
@@ -21,7 +21,7 @@ RUSTFLAGS_PEDANTIC = $(RUSTFLAGS) #-D warnings #-D missing_docs
 COMPILER_ARGS = --target=$(TARGET) \
     --release
 
-DOCKER_IMAGE         = rustembedded/osdev-utils
+DOCKER_IMAGE         = rustembedded/osdev-utils:2021.12
 DOCKER_CMD           = docker run -it --rm -v $(shell pwd):/work/tutorial -w /work/tutorial
 DOCKER_ARG_DIR_UTILS = -v $(shell pwd)/../utils:/work/utils
 DOCKER_ARG_DEV       = --privileged -v /dev:/dev

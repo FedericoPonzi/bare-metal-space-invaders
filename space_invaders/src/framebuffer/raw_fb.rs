@@ -1,17 +1,49 @@
+use crate::actor::Shoot;
+use crate::framebuffer::coordinates::Coordinates;
+use crate::framebuffer::Pixel;
+use crate::{FrameBufferInterface, HeroMovementDirection};
+use alloc::vec::Vec;
+
 /// RPI 3 framebuffer
 pub struct FrameBuffer {
     // this could be an array.
-    pub(crate) lfb_ptr: &'static u32,
-    pub(crate) width: u32,
-    pub(crate) height: u32,
-    pub(crate) pitch: u32,
-    pub(crate) is_rgb: bool,
-    pub(crate) is_brg: bool,
+    pub lfb_ptr: &'static u32,
+    pub width: u32,
+    pub height: u32,
+    pub pitch: u32,
+    pub is_rgb: bool,
+    pub is_brg: bool,
     /// crate::mailbox::FB_VIRTUAL_WIDTH
-    pub(crate) fb_virtual_width: u32,
+    pub fb_virtual_width: u32,
     /// Bits used by each pixel
     pub depth_bits: u32,
-    pub(crate) buffer: Vec<u32>,
+    pub buffer: Vec<u32>,
+}
+
+impl FrameBufferInterface for FrameBuffer {
+    fn raw_buffer(&mut self) -> &mut [u32] {
+        &mut self.buffer
+    }
+
+    fn width(&self) -> usize {
+        self.width as usize
+    }
+
+    fn update(&mut self) {
+        //let cnt = self.width as usize * self.height as usize;
+        unsafe {
+            let dst_buffer = self.lfb_ptr as *const u32 as *mut u32;
+            let src_buffer = self.buffer.as_ptr();
+            core::ptr::copy(src_buffer, dst_buffer, self.buffer.len());
+        }
+    }
+
+    fn get_input_keys(
+        &self,
+        hero_coordinates: &Coordinates,
+    ) -> (HeroMovementDirection, Option<Shoot>) {
+        todo!()
+    }
 }
 
 impl FrameBuffer {
@@ -42,14 +74,14 @@ impl FrameBuffer {
                 let ptr = ptr.add((offset) as usize);
                 core::ptr::write_volatile(ptr, to_write);
             } else {
-                println!(
+                /*println!(
                     "Request to write pixel: {:?}, but max screensize is :{}",
                     pixel,
                     self.max_screen_size()
-                );
+                );*/
             }
             if offset >= self.max_screen_size() {
-                println!("Offset is >= max_screen_size, skipping.");
+                //info!("Offset is >= max_screen_size, skipping.");
             }
         }
     }

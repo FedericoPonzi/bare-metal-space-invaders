@@ -1,18 +1,29 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(feature = "no_std", feature(format_args_nl))]
+
 mod actor;
 mod framebuffer;
+
+use alloc::vec::Vec;
+
 mod time;
 
 extern crate alloc;
 
 use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{Hero, ShootOwner};
-use crate::framebuffer::fb_trait::FrameBufferInterface;
+pub use crate::framebuffer::fb_trait::FrameBufferInterface;
+#[cfg(feature = "no_std")]
+pub use framebuffer::FrameBuffer;
+
+use log::info;
 
 #[cfg(feature = "std")]
 pub use framebuffer::StdFrameBuffer;
 
 pub fn run_game(mut fb: impl FrameBufferInterface) {
     loop {
+        info!("Starting game...");
         init_game(&mut fb);
     }
 }
@@ -53,7 +64,7 @@ fn init_game(fb: &mut impl FrameBufferInterface) {
             match shoot.owner {
                 ShootOwner::Enemy => {
                     if shoot.is_hit(&hero.structure.coordinates) {
-                        println!("Hero is dead!");
+                        info!("Hero is dead!");
                     } else {
                         new_shoots.push(shoot);
                     }
@@ -63,7 +74,7 @@ fn init_game(fb: &mut impl FrameBufferInterface) {
                     for alien in aliens.iter_mut().filter(|a| a.structure.alive) {
                         if shoot.is_hit(&alien.structure.coordinates) {
                             alien.structure.alive = false;
-                            println!("Alien is dead!");
+                            info!("Alien is dead!");
                             has_hit = true;
                             break;
                         }
@@ -77,7 +88,7 @@ fn init_game(fb: &mut impl FrameBufferInterface) {
         shoots = new_shoots;
 
         if !hero.structure.alive {
-            println!("Game over!");
+            info!("Game over!");
             return;
         }
 
@@ -85,12 +96,12 @@ fn init_game(fb: &mut impl FrameBufferInterface) {
         for enemy in aliens.iter() {
             alive = alive || enemy.structure.alive;
             if enemy.structure.coordinates.y >= hero.structure.coordinates.y {
-                println!("Game over!");
+                info!("Game over!");
                 return;
             }
         }
         if !alive {
-            println!("Game over, you won!");
+            info!("Game over, you won!");
             return;
         }
 
