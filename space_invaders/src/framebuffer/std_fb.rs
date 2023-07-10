@@ -4,10 +4,11 @@ use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::HeroMovementDirection;
 use alloc::vec;
 use alloc::vec::Vec;
+use log::info;
 use minifb::{Key, Window, WindowOptions};
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1080;
+const WIDTH: usize = 1280;
+const HEIGHT: usize = 720;
 const MARGIN: usize = 30;
 
 pub struct StdFrameBuffer {
@@ -54,6 +55,7 @@ impl FrameBufferInterface for StdFrameBuffer {
         &self,
         hero_coordinates: &Coordinates,
     ) -> (HeroMovementDirection, Option<Shoot>) {
+        info!("called!");
         let mut hero_movement_direction = HeroMovementDirection::Still;
         let mut shoot = None;
         for key in self.window.get_keys() {

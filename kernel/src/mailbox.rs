@@ -1,21 +1,26 @@
 use alloc::vec;
 //use crate::const_assert_size;
 use crate::mailbox::ReqResp::ResponseSuccessful;
-use crate::{error, info, println};
+use crate::{error, info, println, PL011_UART_START};
 use core::mem;
 use core::ops::BitAnd;
-use space_invaders::FrameBuffer;
-use space_invaders::FrameBufferInterface;
 //use log::{error, info};
+use crate::framebuffer::FrameBuffer;
+use crate::uart_pl011::PL011Uart;
 use cortex_a::asm;
+
+const _width: usize = 640;
+const _height: usize = 480;
 
 const LFB_MESSAGE_SIZE: usize = 35;
 /// Set physical (display) width/height
 const FB_PHYSICAL_WH_TAG: u32 = 0x00048003;
 /// Width of the requested frame buffer
-const FB_PHYSICAL_WIDTH: u32 = 1024;
+const FB_PHYSICAL_WIDTH: u32 = 1280;
 /// Height of the requested frame buffer
-const FB_PHYSICAL_HEIGHT: u32 = 768;
+const FB_PHYSICAL_HEIGHT: u32 = 720;
+
+const BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH as usize;
 
 /// Set virtual (buffer) width/height
 const FB_VIRTUAL_WH_TAG: u32 = 0x00048004;
@@ -242,7 +247,8 @@ pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
             is_rgb,
             is_brg: !is_rgb,
             fb_virtual_width: FB_VIRTUAL_WIDTH,
-            buffer: vec![0; (width * height) as usize],
+            buffer: vec![0; BUFFER_LEN],
+            uart: unsafe { PL011Uart::new(PL011_UART_START) },
         };
         println!(
             "All good, setting up the frame buffer now: {}, height: {}, pitch: {}, depth:{}, is_rgb: {}",

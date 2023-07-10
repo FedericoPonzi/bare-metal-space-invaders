@@ -33,14 +33,14 @@ impl Color {
             brga: Self::brga_u32(alpha, red, green, blue),
         }
     }
-    pub(crate) fn as_rgb_u32(&self) -> u32 {
+    pub fn as_rgb_u32(&self) -> u32 {
         (255 << 28 | (self.red as u32) << 16) | ((self.green as u32) << 8) | (self.blue as u32)
     }
-    const fn brga_u32(alpha: u8, red: u8, green: u8, blue: u8) -> u32 {
+    pub const fn brga_u32(alpha: u8, red: u8, green: u8, blue: u8) -> u32 {
         ((alpha as u32) << 24) | ((red as u32) << 16) | ((green as u32) << 8) | (blue as u32)
     }
 
-    pub(crate) fn as_brga_u32(&self) -> u32 {
+    pub fn as_brga_u32(&self) -> u32 {
         self.brga
     }
 }

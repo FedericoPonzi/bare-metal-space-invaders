@@ -426,8 +426,11 @@ impl PL011Uart {
 }
 
 impl PL011Uart {
-    fn read_char(&self) -> char {
+    pub(crate) fn read_char(&self) -> char {
         (&self.inner).lock(|inner| inner.read_char_converting(BlockingMode::Blocking).unwrap())
+    }
+    pub(crate) fn read_char_unblocking(&self) -> Option<char> {
+        (&self.inner).lock(|inner| inner.read_char_converting(BlockingMode::NonBlocking))
     }
 
     fn clear_rx(&self) {

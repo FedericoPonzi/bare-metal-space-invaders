@@ -1,17 +1,38 @@
+use core::ops::Sub;
 use core::time::Duration;
 
 pub trait TimeManagerInterface {
-    fn wait(&self, d: Duration);
+    /// a monotonically increasing clock.
+    fn now(&self) -> Duration;
+
+    /// how much time passed since time_in_the_past.
+    fn since(&self, time_in_the_past: Duration) -> Duration {
+        self.now().sub(time_in_the_past)
+    }
 }
 
-pub fn time_manager() -> TimeManager {
-    TimeManager {}
-}
+#[cfg(feature = "std")]
+pub use std_time::*;
 
-pub struct TimeManager {}
+#[cfg(feature = "std")]
+mod std_time {
+    use crate::TimeManagerInterface;
+    use std::ops::Sub;
+    use std::time::{Duration, Instant, SystemTime};
 
-impl TimeManagerInterface for TimeManager {
-    fn wait(&self, d: Duration) {
-        //std::thread::sleep(d);
+    pub struct TimeManager;
+
+    impl TimeManager {
+        pub fn new() -> Self {
+            TimeManager
+        }
+    }
+
+    impl TimeManagerInterface for TimeManager {
+        fn now(&self) -> Duration {
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .expect("Failed to get current time")
+        }
     }
 }

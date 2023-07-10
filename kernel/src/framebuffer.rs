@@ -1,8 +1,8 @@
-use crate::actor::Shoot;
-use crate::framebuffer::coordinates::Coordinates;
-use crate::framebuffer::Pixel;
-use crate::{FrameBufferInterface, HeroMovementDirection};
-use alloc::vec::Vec;
+use crate::uart_pl011::PL011Uart;
+use alloc::vec;
+use log::info;
+use space_invaders::actor::{Shoot, ShootOwner};
+use space_invaders::{Coordinates, HeroMovementDirection, Pixel};
 
 /// RPI 3 framebuffer
 pub struct FrameBuffer {
@@ -17,10 +17,11 @@ pub struct FrameBuffer {
     pub fb_virtual_width: u32,
     /// Bits used by each pixel
     pub depth_bits: u32,
-    pub buffer: Vec<u32>,
+    pub buffer: vec::Vec<u32>, //[u32; 3024],
+    pub uart: PL011Uart,
 }
 
-impl FrameBufferInterface for FrameBuffer {
+impl space_invaders::FrameBufferInterface for FrameBuffer {
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer
     }
@@ -42,7 +43,40 @@ impl FrameBufferInterface for FrameBuffer {
         &self,
         hero_coordinates: &Coordinates,
     ) -> (HeroMovementDirection, Option<Shoot>) {
-        todo!()
+        let mut max = 10;
+        let mut hero = HeroMovementDirection::Still;
+        let mut shoot = None;
+        loop {
+            max -= 1;
+            match self.uart.read_char_unblocking() {
+                Some(ch) => match ch {
+                    'a' | 'A' => {
+                        hero = HeroMovementDirection::Left;
+                    }
+                    'd' | 'D' => {
+                        hero = HeroMovementDirection::Right;
+                    }
+                    ' ' => {
+                        let new_shoot = Shoot::new(
+                            Coordinates::new(hero_coordinates.x, hero_coordinates.y - 20),
+                            ShootOwner::Hero,
+                        );
+                        info!("pew!");
+                        shoot = Some(new_shoot);
+                    }
+                    received => {
+                        info!("Received key {}, not doing anything.", received);
+                    }
+                },
+                None => break, // input empty
+            }
+            if max == 0 {
+                break;
+            }
+        }
+
+        info!("Hero direction: {:?},  shoot: {:?} ", hero, shoot.is_some());
+        (hero, shoot)
     }
 }
 
@@ -50,7 +84,7 @@ impl FrameBuffer {
     pub fn max_screen_size(&self) -> u32 {
         (self.depth_bits) * self.width * self.height
     }
-    pub(crate) fn clear_screen(&mut self) {
+    pub fn clear_screen(&mut self) {
         unsafe {
             core::ptr::write_bytes(
                 self.lfb_ptr as *const u32 as *mut u32,

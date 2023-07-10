@@ -1,5 +1,6 @@
 use core::alloc::{GlobalAlloc, Layout};
 
+use crate::uart_pl011::{MutexTrait, NullLock};
 use crate::{debug, info};
 use core::cell::UnsafeCell;
 use core::ops::Range;

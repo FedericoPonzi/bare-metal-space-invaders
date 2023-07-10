@@ -33,7 +33,7 @@ impl Actor for Shoot {
 }
 
 impl Shoot {
-    pub(crate) fn new(coordinates: Coordinates, owner: ShootOwner) -> Self {
+    pub fn new(coordinates: Coordinates, owner: ShootOwner) -> Self {
         let shoot_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(SHOOT) };
         Shoot {
             structure: ActorStructure {

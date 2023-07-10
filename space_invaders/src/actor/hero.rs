@@ -8,10 +8,11 @@ const HERO: &[u8; 5336] =
 const HERO_WIDTH: u32 = 46;
 const HERO_HEIGHT: u32 = 29;
 
-const HERO_SPAWN_X: u32 = 1000;
-const HERO_SPAWN_Y: u32 = 1000;
+const HERO_SPAWN_X: u32 = 400;
+const HERO_SPAWN_Y: u32 = 400;
 
-const HERO_MOVEMENT_OFFSET: u32 = 10;
+const HERO_MOVEMENT_OFFSET: u32 = 10; // 10 pixel per key pressed
+const HERO_SPEED_MS: u32 = 1; // pixels per millisecond
 
 #[derive(Copy, Clone)]
 pub struct Hero {
@@ -32,19 +33,33 @@ impl Hero {
             },
         }
     }
-    pub(crate) fn move_left(&mut self) {
-        self.structure.coordinates.sub_x(HERO_MOVEMENT_OFFSET);
+    fn move_left(&mut self, delta: u64) {
+        self.structure
+            .coordinates
+            .sub_x(HERO_SPEED_MS * delta as u32 / 10 as u32);
     }
-    pub(crate) fn move_right(&mut self) {
-        self.structure.coordinates.add_x(HERO_MOVEMENT_OFFSET);
+
+    fn move_right(&mut self, delta: u64, max_width: u32) {
+        self.structure
+            .coordinates
+            .add_x(HERO_SPEED_MS * delta as u32 / 10 as u32);
+        if self.structure.coordinates.x > max_width {
+            self.structure.coordinates.x = max_width - self.structure.width;
+        }
     }
-    pub fn handle_movement(&mut self, hero_movement_direction: HeroMovementDirection) {
+
+    pub fn handle_movement(
+        &mut self,
+        hero_movement_direction: HeroMovementDirection,
+        delta: u64,
+        max_width: u32,
+    ) {
         match hero_movement_direction {
             HeroMovementDirection::Left => {
-                self.move_left();
+                self.move_left(delta);
             }
             HeroMovementDirection::Right => {
-                self.move_right();
+                self.move_right(delta, max_width);
             }
             _ => {
                 // hero hasn't move
