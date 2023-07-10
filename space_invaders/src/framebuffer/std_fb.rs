@@ -55,7 +55,6 @@ impl FrameBufferInterface for StdFrameBuffer {
         &self,
         hero_coordinates: &Coordinates,
     ) -> (HeroMovementDirection, Option<Shoot>) {
-        info!("called!");
         let mut hero_movement_direction = HeroMovementDirection::Still;
         let mut shoot = None;
         for key in self.window.get_keys() {

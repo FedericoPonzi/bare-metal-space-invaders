@@ -18,9 +18,8 @@ const HERO_SPEED_MS: u32 = 1; // pixels per millisecond
 pub struct Hero {
     pub(crate) structure: ActorStructure,
 }
-
-impl Hero {
-    pub fn new() -> Hero {
+impl Default for Hero {
+    fn default() -> Self {
         let hero_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(HERO) };
 
         Hero {
@@ -33,6 +32,11 @@ impl Hero {
             },
         }
     }
+}
+impl Hero {
+    pub fn new() -> Hero {
+        Self::default()
+    }
     fn move_left(&mut self, delta: u64) {
         self.structure
             .coordinates
@@ -43,7 +47,7 @@ impl Hero {
         self.structure
             .coordinates
             .add_x(HERO_SPEED_MS * delta as u32 / 10 as u32);
-        if self.structure.coordinates.x > max_width {
+        if self.structure.coordinates.x + self.structure.width >= max_width {
             self.structure.coordinates.x = max_width - self.structure.width;
         }
     }

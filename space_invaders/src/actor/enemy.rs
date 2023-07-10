@@ -20,9 +20,8 @@ const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 10;
 pub struct Enemy {
     pub(crate) structure: ActorStructure,
 }
-
-impl Enemy {
-    pub fn new() -> Self {
+impl Default for Enemy {
+    fn default() -> Self {
         let enemy_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(ENEMY) };
         //let enemy_sprite =
         //    scale_down_image(enemy_sprite, ENEMY_WIDTH as usize, ENEMY_HEIGHT as usize, 2);
@@ -36,6 +35,11 @@ impl Enemy {
                 coordinates: Coordinates::new(0, 0),
             },
         }
+    }
+}
+impl Enemy {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

@@ -117,7 +117,9 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         let mut alive = false;
         for enemy in aliens.iter() {
             alive = alive || enemy.structure.alive;
-            if enemy.structure.coordinates.y >= hero.structure.coordinates.y {
+            if enemy.structure.coordinates.y + enemy.structure.height
+                >= hero.structure.coordinates.y
+            {
                 info!("Game over!");
                 return;
             }

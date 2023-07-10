@@ -7,7 +7,6 @@ this crate can run both with std using xx and on bare metal by implementing the 
 
 
 # TODO:
-* monotonic clock for std
 * fix issues with game (not going oob)
 * remove allocations for each shot
 * add graphics
