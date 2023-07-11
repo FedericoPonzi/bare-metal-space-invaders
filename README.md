@@ -7,7 +7,8 @@ this crate can run both with std using xx and on bare metal by implementing the 
 
 
 # TODO:
-* fix issues with game (not going oob)
+* fix issues with game
+  * enemies should fire as well
+  * should use the full available screen
 * remove allocations for each shot
 * add graphics
-* enemies should fire as well

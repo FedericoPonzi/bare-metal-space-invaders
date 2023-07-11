@@ -1,4 +1,4 @@
-use crate::actor::{scale_down_image, Actor, ActorStructure};
+use crate::actor::{Actor, ActorStructure};
 use crate::framebuffer::coordinates::Coordinates;
 use core::mem;
 

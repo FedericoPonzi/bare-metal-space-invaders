@@ -2,10 +2,9 @@ use crate::actor::{Shoot, ShootOwner};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::HeroMovementDirection;
-use alloc::vec;
-use alloc::vec::Vec;
 use log::info;
 use minifb::{Key, Window, WindowOptions};
+use std::vec;
 
 const WIDTH: usize = 1280;
 const HEIGHT: usize = 720;

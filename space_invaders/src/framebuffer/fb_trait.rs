@@ -3,7 +3,7 @@ use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Pixel;
 use crate::HeroMovementDirection;
-use alloc::vec::Vec;
+
 use micromath::F32;
 
 pub trait FrameBufferInterface {

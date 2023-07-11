@@ -4,12 +4,7 @@
 pub mod actor;
 mod framebuffer;
 
-use alloc::vec::Vec;
-use core::ops::Sub;
-
 mod time;
-
-extern crate alloc;
 
 pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{Hero, ShootOwner};
@@ -37,35 +32,40 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
     let mut aliens = init_enemies();
 
     let mut offset_y = 0;
-    let mut shoots: Vec<Shoot> = Vec::new();
+    let mut shoots: [Option<Shoot>; 100] = [None; 100];
     let mut hero = Hero::new();
 
     let mut direction = 0;
     let mut direction_index = 1i32;
     let mut enemy_last_movement = time_manager.now();
-    let mut hero_last_movement = time_manager.now();
     let mut last_draw = time_manager.now();
     let mut last_loop = time_manager.now();
     loop {
         let loop_start = time_manager.now();
         let mut delta_ms = last_loop.as_millis();
-        info!("delta_ms: {}", delta_ms);
 
         // 1. Get input
         let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates);
         if let Some(shoot) = shoot {
-            shoots.push(shoot);
+            for sh in shoots.iter_mut() {
+                if sh.is_none() {
+                    sh.replace(shoot);
+                    break;
+                }
+            }
         }
 
         // 2. Movement
-        let mut new_shoots: Vec<Shoot> = Vec::new();
-        for mut shoot in shoots {
-            shoot.move_forward();
-            if !out_of_screen(&shoot) {
-                new_shoots.push(shoot);
+        //let mut new_shoots: Vec<Shoot> = Vec::new();
+        for sh in shoots.iter_mut() {
+            if let Some(shoot) = sh.as_mut() {
+                shoot.move_forward();
+                if out_of_screen(&shoot) {
+                    //remove it.
+                    let _ = sh.take();
+                }
             }
         }
-        shoots = new_shoots;
         fb.clear_screen();
         let offset = 10 * direction;
         if time_manager.since(enemy_last_movement).as_millis() > 100 {
@@ -78,36 +78,36 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             enemy_last_movement = time_manager.now();
         }
         hero.handle_movement(hero_movement_direction, delta_ms as u64, fb.width() as u32);
-        hero_last_movement = time_manager.now();
 
         // 3. collision detection
-        let mut new_shoots = Vec::new();
-        for shoot in shoots {
-            match shoot.owner {
-                ShootOwner::Enemy => {
-                    if shoot.is_hit(&hero.structure.coordinates) {
-                        info!("Hero is dead!");
-                    } else {
-                        new_shoots.push(shoot);
-                    }
-                }
-                ShootOwner::Hero => {
-                    let mut has_hit = false;
-                    for alien in aliens.iter_mut().filter(|a| a.structure.alive) {
-                        if shoot.is_hit(&alien.structure.coordinates) {
-                            alien.structure.alive = false;
-                            info!("Alien is dead!");
-                            has_hit = true;
-                            break;
+
+        for sh in shoots.iter_mut() {
+            if let Some(shoot) = sh {
+                match shoot.owner {
+                    ShootOwner::Enemy => {
+                        if shoot.is_hit(&hero.structure.coordinates) {
+                            let _ = sh.take();
+                            info!("Hero is dead!");
+                            hero.structure.alive = false;
                         }
                     }
-                    if !has_hit {
-                        new_shoots.push(shoot);
+                    ShootOwner::Hero => {
+                        let mut has_hit = false;
+                        for alien in aliens.iter_mut().filter(|a| a.structure.alive) {
+                            if shoot.is_hit(&alien.structure.coordinates) {
+                                alien.structure.alive = false;
+                                info!("Alien is dead!");
+                                has_hit = true;
+                                break;
+                            }
+                        }
+                        if has_hit {
+                            sh.take();
+                        }
                     }
                 }
             }
         }
-        shoots = new_shoots;
 
         if !hero.structure.alive {
             info!("Game over!");
@@ -137,7 +137,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
 
         hero.draw(fb);
-        for shoot in shoots.iter() {
+        for shoot in shoots.iter_mut().flatten() {
             shoot.draw(fb);
         }
         const FPS: u128 = 60;
