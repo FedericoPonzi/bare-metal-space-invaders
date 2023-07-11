@@ -1,6 +1,6 @@
 use crate::actor::{Actor, ActorStructure};
 use crate::framebuffer::coordinates::Coordinates;
-use crate::HeroMovementDirection;
+use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
 use core::mem;
 
 const HERO: &[u8; 5336] =
@@ -8,11 +8,10 @@ const HERO: &[u8; 5336] =
 const HERO_WIDTH: u32 = 46;
 const HERO_HEIGHT: u32 = 29;
 
-const HERO_SPAWN_X: u32 = 400;
-const HERO_SPAWN_Y: u32 = 400;
+const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) as u32 - HERO_WIDTH;
+const HERO_SPAWN_Y: u32 = (SCREEN_HEIGHT - SCREEN_MARGIN - HERO_HEIGHT as usize) as u32;
 
-const HERO_MOVEMENT_OFFSET: u32 = 10; // 10 pixel per key pressed
-const HERO_SPEED_MS: u32 = 1; // pixels per millisecond
+const HERO_SPEED_MS: u32 = 20; // pixels per millisecond
 
 #[derive(Copy, Clone)]
 pub struct Hero {
@@ -38,17 +37,17 @@ impl Hero {
         Self::default()
     }
     fn move_left(&mut self, delta: u64) {
-        self.structure
-            .coordinates
-            .sub_x(HERO_SPEED_MS * delta as u32 / 10 as u32);
+        self.structure.coordinates.sub_x(HERO_SPEED_MS);
+        self.structure.coordinates.x =
+            core::cmp::max(SCREEN_MARGIN as u32, self.structure.coordinates.x);
     }
 
     fn move_right(&mut self, delta: u64, max_width: u32) {
-        self.structure
-            .coordinates
-            .add_x(HERO_SPEED_MS * delta as u32 / 10 as u32);
-        if self.structure.coordinates.x + self.structure.width >= max_width {
-            self.structure.coordinates.x = max_width - self.structure.width;
+        self.structure.coordinates.add_x(HERO_SPEED_MS);
+        if self.structure.coordinates.x + self.structure.width
+            >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32
+        {
+            self.structure.coordinates.x = max_width - self.structure.width - SCREEN_MARGIN as u32;
         }
     }
 

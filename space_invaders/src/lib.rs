@@ -9,6 +9,8 @@ mod time;
 pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{Hero, ShootOwner};
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
+use core::ops::Sub;
+use core::time::Duration;
 pub use framebuffer::{Coordinates, Pixel};
 
 use log::info;
@@ -20,6 +22,11 @@ pub use crate::time::TimeManagerInterface;
 
 #[cfg(feature = "std")]
 pub use framebuffer::StdFrameBuffer;
+
+pub const SCREEN_WIDTH: usize = 1280;
+pub const SCREEN_HEIGHT: usize = 720;
+pub const SCREEN_MARGIN: usize = 30;
+const FPS: u128 = 15;
 
 pub fn run_game(mut fb: impl FrameBufferInterface, time_manager: impl TimeManagerInterface) {
     loop {
@@ -37,12 +44,11 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
 
     let mut direction = 0;
     let mut direction_index = 1i32;
-    let mut enemy_last_movement = time_manager.now();
     let mut last_draw = time_manager.now();
     let mut last_loop = time_manager.now();
     loop {
         let loop_start = time_manager.now();
-        let mut delta_ms = last_loop.as_millis();
+        let delta_ms = last_loop.as_millis();
 
         // 1. Get input
         let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates);
@@ -68,15 +74,13 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
         fb.clear_screen();
         let offset = 10 * direction;
-        if time_manager.since(enemy_last_movement).as_millis() > 100 {
-            move_enemies(offset, offset_y, &mut aliens);
-            direction = direction.saturating_add_signed(direction_index);
-            if direction == 8 || direction == 0 {
-                direction_index = -direction_index;
-                offset_y += 10;
-            }
-            enemy_last_movement = time_manager.now();
+        move_enemies(offset, offset_y, &mut aliens);
+        direction = direction.saturating_add_signed(direction_index);
+        if direction == 8 || direction == 0 {
+            direction_index = -direction_index;
+            offset_y += 10;
         }
+        info!("delta_ms: {}", delta_ms);
         hero.handle_movement(hero_movement_direction, delta_ms as u64, fb.width() as u32);
 
         // 3. collision detection
@@ -140,10 +144,13 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         for shoot in shoots.iter_mut().flatten() {
             shoot.draw(fb);
         }
-        const FPS: u128 = 60;
-        if time_manager.since(last_draw).as_millis() >= 1000 / FPS {
-            fb.update();
-            last_draw = time_manager.now();
+
+        fb.update();
+        last_draw = time_manager.now();
+        let delta_next =
+            Duration::from_millis(1000 / FPS as u64).saturating_sub(time_manager.since(last_loop));
+        if delta_next.as_millis() > 0 {
+            std::thread::sleep(delta_next);
         }
         last_loop = time_manager.since(loop_start);
     }
@@ -152,8 +159,8 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
 fn out_of_screen(shoot: &Shoot) -> bool {
     let structure = shoot.structure;
     let coordinates = structure.coordinates;
-    coordinates.x == 0
-        || coordinates.x > (structure.width * structure.height)
+    // coordinates.x == 0 ||
+    coordinates.x > (structure.width * structure.height)
         || coordinates.y == 0
         || coordinates.y > (structure.width * structure.height)
 }

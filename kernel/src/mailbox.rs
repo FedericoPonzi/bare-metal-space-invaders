@@ -8,24 +8,22 @@ use core::ops::BitAnd;
 use crate::framebuffer::FrameBuffer;
 use crate::uart_pl011::PL011Uart;
 use cortex_a::asm;
-
-const _width: usize = 640;
-const _height: usize = 480;
+use space_invaders::{SCREEN_HEIGHT, SCREEN_WIDTH};
 
 const LFB_MESSAGE_SIZE: usize = 35;
 /// Set physical (display) width/height
 const FB_PHYSICAL_WH_TAG: u32 = 0x00048003;
 /// Width of the requested frame buffer
-const FB_PHYSICAL_WIDTH: u32 = 1280;
+const FB_PHYSICAL_WIDTH: u32 = 864 as u32;
 /// Height of the requested frame buffer
-const FB_PHYSICAL_HEIGHT: u32 = 720;
+const FB_PHYSICAL_HEIGHT: u32 = 480 as u32;
 
 const BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH as usize;
 
 /// Set virtual (buffer) width/height
 const FB_VIRTUAL_WH_TAG: u32 = 0x00048004;
-pub(crate) const FB_VIRTUAL_WIDTH: u32 = FB_PHYSICAL_WIDTH;
-const FB_VIRTUAL_HEIGHT: u32 = FB_PHYSICAL_HEIGHT;
+const FB_VIRTUAL_WIDTH: u32 = SCREEN_WIDTH as u32;
+const FB_VIRTUAL_HEIGHT: u32 = SCREEN_HEIGHT as u32;
 
 const FB_VIRTUAL_OFFSET_TAG: u32 = 0x48009;
 const FB_VIRTUAL_OFFSET_X: u32 = 0;

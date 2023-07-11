@@ -1,20 +1,23 @@
 use crate::actor::{Actor, ActorStructure};
 use crate::framebuffer::coordinates::Coordinates;
+use crate::{SCREEN_MARGIN, SCREEN_WIDTH};
 use core::mem;
 
-const ENEMY: &[u8; 5336] =
-    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");
-const ENEMY_WIDTH: u32 = 46;
-const ENEMY_HEIGHT: u32 = 29;
+const SPRITE_SIZE: usize = 5120;
+const ENEMY: &[u8; SPRITE_SIZE] =
+    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data");
+const ENEMY_WIDTH: u32 = 40;
+const ENEMY_HEIGHT: u32 = 32;
 
-const ALIEN_ROWS: u32 = 4;
-const ALIEN_COLS: u32 = 14;
+const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 10;
+
+const ALIEN_ROWS: u32 = 3;
+const ALIEN_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
+    / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW));
 
 const ENEMY_SPEED_PER_MS: u32 = 10; // 10 pixels per millisecond
 
 pub const TOTAL_ENEMIES: usize = (ALIEN_ROWS * ALIEN_COLS) as usize;
-
-const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 10;
 
 #[derive(Copy, Clone)]
 pub struct Enemy {
@@ -22,9 +25,7 @@ pub struct Enemy {
 }
 impl Default for Enemy {
     fn default() -> Self {
-        let enemy_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(ENEMY) };
-        //let enemy_sprite =
-        //    scale_down_image(enemy_sprite, ENEMY_WIDTH as usize, ENEMY_HEIGHT as usize, 2);
+        let enemy_sprite: &[u32; SPRITE_SIZE / 4] = unsafe { mem::transmute(ENEMY) };
 
         Enemy {
             structure: ActorStructure {
@@ -56,9 +57,9 @@ impl Actor for Enemy {
 pub fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
     let mut enemies = [Enemy::new(); TOTAL_ENEMIES];
     for x in 0..ALIEN_COLS {
-        let offset_x = ENEMY_WIDTH * x + (10 * x);
+        let offset_x = ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
         for y in 0..ALIEN_ROWS {
-            let offset_y = ENEMY_HEIGHT * y;
+            let offset_y = ENEMY_HEIGHT * y + SCREEN_MARGIN as u32;
             enemies[(y * ALIEN_COLS + x) as usize].structure.coordinates =
                 Coordinates::new(offset_x, offset_y);
         }

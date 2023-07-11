@@ -8,7 +8,6 @@ use std::vec;
 
 const WIDTH: usize = 1280;
 const HEIGHT: usize = 720;
-const MARGIN: usize = 30;
 
 pub struct StdFrameBuffer {
     pub(crate) window: Window,
