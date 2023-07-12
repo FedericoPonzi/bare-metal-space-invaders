@@ -8,7 +8,10 @@ const SHOOT: &[u8; 5336] =
 const SHOOT_WIDTH: u32 = 46;
 const SHOOT_HEIGHT: u32 = 29;
 
-const SHOOT_MOVEMENT_OFFSET: u32 = 10;
+const SHOOT_MOVEMENT_OFFSET: u32 = 20;
+
+// max shots available to render at a time
+pub const SHOOT_MAX_ALLOC: usize = 30;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ShootOwner {

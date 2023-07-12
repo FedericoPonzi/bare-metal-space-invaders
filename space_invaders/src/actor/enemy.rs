@@ -2,6 +2,7 @@ use crate::actor::{Actor, ActorStructure};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::{SCREEN_MARGIN, SCREEN_WIDTH};
 use core::mem;
+use log::info;
 
 const SPRITE_SIZE: usize = 5120;
 const ENEMY: &[u8; SPRITE_SIZE] =
@@ -9,19 +10,21 @@ const ENEMY: &[u8; SPRITE_SIZE] =
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
 
-const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 10;
+const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 15;
+const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL: u32 = 15;
+const ALIEN_ROWS: u32 = 4;
+pub const ALIEN_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
+    / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW))
+    - 5;
 
-const ALIEN_ROWS: u32 = 3;
-const ALIEN_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
-    / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW));
-
-const ENEMY_SPEED_PER_MS: u32 = 10; // 10 pixels per millisecond
+const ENEMY_SPEED_PER_MS: i32 = 20; // pixels per second
 
 pub const TOTAL_ENEMIES: usize = (ALIEN_ROWS * ALIEN_COLS) as usize;
 
 #[derive(Copy, Clone)]
 pub struct Enemy {
     pub(crate) structure: ActorStructure,
+    movement_acc: i32,
 }
 impl Default for Enemy {
     fn default() -> Self {
@@ -35,6 +38,7 @@ impl Default for Enemy {
                 alive: true,
                 coordinates: Coordinates::new(0, 0),
             },
+            movement_acc: 0,
         }
     }
 }
@@ -57,25 +61,131 @@ impl Actor for Enemy {
 pub fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
     let mut enemies = [Enemy::new(); TOTAL_ENEMIES];
     for x in 0..ALIEN_COLS {
-        let offset_x = ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
+        let offset_x =
+            SCREEN_MARGIN as u32 + ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
         for y in 0..ALIEN_ROWS {
-            let offset_y = ENEMY_HEIGHT * y + SCREEN_MARGIN as u32;
+            let offset_y =
+                (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y + SCREEN_MARGIN as u32;
             enemies[(y * ALIEN_COLS + x) as usize].structure.coordinates =
                 Coordinates::new(offset_x, offset_y);
         }
     }
     enemies
 }
-
-pub fn move_enemies(offset: u32, offset_y: u32, aliens: &mut [Enemy; TOTAL_ENEMIES]) {
+#[derive(Eq, PartialEq, Debug)]
+pub enum EnemiesDirection {
+    Right,
+    Left,
+}
+impl EnemiesDirection {
+    fn invert_direction(&self) -> Self {
+        use EnemiesDirection::{Left, Right};
+        match self {
+            Right => Left,
+            Left => Right,
+        }
+    }
+    fn to_offset(&self, delta_ms: u64, speedup: i32) -> i32 {
+        use EnemiesDirection::{Left, Right};
+        let delta_ms = delta_ms as i32;
+        match self {
+            Right => (ENEMY_SPEED_PER_MS + speedup) * delta_ms,
+            Left => (-ENEMY_SPEED_PER_MS - speedup) * delta_ms,
+        }
+    }
+}
+/// largest_x is the largest x coordinate of still alive enemy
+/// lowest_x is the lowest x coordinate of still alive enemy
+pub fn move_enemies(
+    offset_y: &mut usize,
+    enemy: &mut [Enemy; TOTAL_ENEMIES],
+    direction: EnemiesDirection,
+    delta_ms: u64,
+) -> EnemiesDirection {
+    let mut lowest_col: Option<(u32, u32)> = None;
+    let mut largest_col: Option<(u32, u32)> = None;
+    let mut enemies_dead = 0;
+    // determine the direction.
     for x in 0..ALIEN_COLS {
-        let offset_x = ENEMY_WIDTH * x + (offset + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
         for y in 0..ALIEN_ROWS {
-            let offset_y = ENEMY_HEIGHT * y + offset_y;
-            let index = (y * ALIEN_COLS + x) as usize;
-            if aliens[index].structure.alive {
-                aliens[index].move_to(Coordinates::new(offset_x, offset_y));
+            let enemy = enemy[(y * ALIEN_COLS + x) as usize];
+            if !enemy.structure.alive {
+                enemies_dead += 1;
+                continue;
+            }
+            if largest_col.is_none() || core::cmp::max(largest_col.unwrap().0, x) == x {
+                largest_col = Some((x, y));
+            }
+            if lowest_col.is_none() || core::cmp::min(lowest_col.unwrap().0, x) == x {
+                lowest_col = Some((x, y));
             }
         }
     }
+    // speed up per dead enemy
+    let speedup = (ENEMY_SPEED_PER_MS as f32 * (enemies_dead as f32 / TOTAL_ENEMIES as f32)) as i32;
+    let speedup = if direction == EnemiesDirection::Right {
+        speedup
+    } else {
+        -speedup
+    };
+    let lowest_col = lowest_col.unwrap();
+    let lowest_enemy = enemy[(lowest_col.1 * ALIEN_COLS + lowest_col.0) as usize];
+    let largest_col = largest_col.unwrap();
+    let largest_enemy = enemy[(largest_col.1 * ALIEN_COLS + largest_col.0) as usize];
+    let right_limit = direction == EnemiesDirection::Right
+        && largest_enemy.structure.coordinates.x
+            + ENEMY_WIDTH
+            //+ ENEMY_SPEED_PER_MS as u32 * speedup as u32
+            >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
+    info!("Enemies direction : {:?}", direction);
+    info!("Right limit : {:?}", right_limit);
+
+    let left_limit = direction == EnemiesDirection::Left
+        && lowest_enemy.structure.coordinates.x <= SCREEN_MARGIN as u32;
+    if left_limit || right_limit {
+        // move down one row, invert direction
+        *offset_y += 10;
+        for x in 0..ALIEN_COLS {
+            for y in 0..ALIEN_ROWS {
+                let new_y = (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y
+                    + *offset_y as u32
+                    + SCREEN_MARGIN as u32;
+                let index = (y * ALIEN_COLS + x) as usize;
+                if enemy[index].structure.alive {
+                    enemy[index].move_to(Coordinates::new(
+                        enemy[index].structure.coordinates.x,
+                        new_y,
+                    ));
+                    enemy[index].movement_acc = 0;
+                }
+            }
+        }
+        info!(
+            "offset_y: {:?}, left_limit: {:?}, right_limit: {:?}",
+            offset_y, left_limit, right_limit,
+        );
+        return direction.invert_direction();
+    }
+
+    for x in 0..ALIEN_COLS {
+        let offset_x = direction.to_offset(delta_ms, speedup);
+        for y in 0..ALIEN_ROWS {
+            let index = (y * ALIEN_COLS + x) as usize;
+            if enemy[index].structure.alive {
+                enemy[index].movement_acc += offset_x;
+                if enemy[index].movement_acc / 1000 != 0 {
+                    enemy[index].move_to(Coordinates::new(
+                        enemy[index]
+                            .structure
+                            .coordinates
+                            .x
+                            .saturating_add_signed((enemy[index].movement_acc / 1000) + speedup),
+                        enemy[index].structure.coordinates.y,
+                    ));
+                    enemy[index].movement_acc %= 1000;
+                }
+            }
+        }
+    }
+    direction
 }

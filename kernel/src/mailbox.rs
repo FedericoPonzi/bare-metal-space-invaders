@@ -14,9 +14,9 @@ const LFB_MESSAGE_SIZE: usize = 35;
 /// Set physical (display) width/height
 const FB_PHYSICAL_WH_TAG: u32 = 0x00048003;
 /// Width of the requested frame buffer
-const FB_PHYSICAL_WIDTH: u32 = 864 as u32;
+const FB_PHYSICAL_WIDTH: u32 = SCREEN_WIDTH as u32;
 /// Height of the requested frame buffer
-const FB_PHYSICAL_HEIGHT: u32 = 480 as u32;
+const FB_PHYSICAL_HEIGHT: u32 = SCREEN_HEIGHT as u32;
 
 const BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH as usize;
 

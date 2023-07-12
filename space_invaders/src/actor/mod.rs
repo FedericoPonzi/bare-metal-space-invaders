@@ -6,7 +6,6 @@ pub use enemy::*;
 pub use hero::*;
 pub use shoot::*;
 
-use crate::framebuffer::color::WHITE_COLOR;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 

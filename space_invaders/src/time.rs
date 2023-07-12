@@ -27,8 +27,9 @@ mod std_time {
             TimeManager
         }
     }
-
+    
     impl TimeManagerInterface for TimeManager {
+        /// Duration from EPOCH.
         fn now(&self) -> Duration {
             SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
