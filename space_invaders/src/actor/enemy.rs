@@ -24,7 +24,9 @@ pub const TOTAL_ENEMIES: usize = (ALIEN_ROWS * ALIEN_COLS) as usize;
 #[derive(Copy, Clone)]
 pub struct Enemy {
     pub(crate) structure: ActorStructure,
-    movement_acc: i32,
+    // every loop iteration, might cause a sub-pixel movement.
+    // virtual x has the `real` value that is used to set the new x.
+    virtual_x: f64,
 }
 impl Default for Enemy {
     fn default() -> Self {
@@ -38,7 +40,7 @@ impl Default for Enemy {
                 alive: true,
                 coordinates: Coordinates::new(0, 0),
             },
-            movement_acc: 0,
+            virtual_x: 0f64,
         }
     }
 }
@@ -68,8 +70,10 @@ pub fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
                 (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y + SCREEN_MARGIN as u32;
             enemies[(y * ALIEN_COLS + x) as usize].structure.coordinates =
                 Coordinates::new(offset_x, offset_y);
+            enemies[(y * ALIEN_COLS + x) as usize].virtual_x = offset_x.into();
         }
     }
+    info!("enemy 0: {:?}", enemies[0].structure.coordinates);
     enemies
 }
 #[derive(Eq, PartialEq, Debug)]
@@ -88,10 +92,11 @@ impl EnemiesDirection {
     fn to_offset(&self, delta_ms: u64, speedup: i32) -> i32 {
         use EnemiesDirection::{Left, Right};
         let delta_ms = delta_ms as i32;
-        match self {
+        (match self {
             Right => (ENEMY_SPEED_PER_MS + speedup) * delta_ms,
             Left => (-ENEMY_SPEED_PER_MS - speedup) * delta_ms,
-        }
+        } / 1000)
+            + speedup
     }
 }
 /// largest_x is the largest x coordinate of still alive enemy
@@ -102,6 +107,8 @@ pub fn move_enemies(
     direction: EnemiesDirection,
     delta_ms: u64,
 ) -> EnemiesDirection {
+    info!("enemy 0: {:?}", enemy[0].structure.coordinates);
+    info!("offset_y:  {}", offset_y);
     let mut lowest_col: Option<(u32, u32)> = None;
     let mut largest_col: Option<(u32, u32)> = None;
     let mut enemies_dead = 0;
@@ -137,8 +144,6 @@ pub fn move_enemies(
             + ENEMY_WIDTH
             //+ ENEMY_SPEED_PER_MS as u32 * speedup as u32
             >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
-    info!("Enemies direction : {:?}", direction);
-    info!("Right limit : {:?}", right_limit);
 
     let left_limit = direction == EnemiesDirection::Left
         && lowest_enemy.structure.coordinates.x <= SCREEN_MARGIN as u32;
@@ -147,23 +152,16 @@ pub fn move_enemies(
         *offset_y += 10;
         for x in 0..ALIEN_COLS {
             for y in 0..ALIEN_ROWS {
-                let new_y = (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y
-                    + *offset_y as u32
-                    + SCREEN_MARGIN as u32;
                 let index = (y * ALIEN_COLS + x) as usize;
+                let new_y = enemy[index].structure.coordinates.y + *offset_y as u32;
                 if enemy[index].structure.alive {
                     enemy[index].move_to(Coordinates::new(
                         enemy[index].structure.coordinates.x,
                         new_y,
                     ));
-                    enemy[index].movement_acc = 0;
                 }
             }
         }
-        info!(
-            "offset_y: {:?}, left_limit: {:?}, right_limit: {:?}",
-            offset_y, left_limit, right_limit,
-        );
         return direction.invert_direction();
     }
 
@@ -172,18 +170,11 @@ pub fn move_enemies(
         for y in 0..ALIEN_ROWS {
             let index = (y * ALIEN_COLS + x) as usize;
             if enemy[index].structure.alive {
-                enemy[index].movement_acc += offset_x;
-                if enemy[index].movement_acc / 1000 != 0 {
-                    enemy[index].move_to(Coordinates::new(
-                        enemy[index]
-                            .structure
-                            .coordinates
-                            .x
-                            .saturating_add_signed((enemy[index].movement_acc / 1000) + speedup),
-                        enemy[index].structure.coordinates.y,
-                    ));
-                    enemy[index].movement_acc %= 1000;
-                }
+                enemy[index].virtual_x += offset_x as f64;
+                enemy[index].move_to(Coordinates::new(
+                    enemy[index].virtual_x.round() as u32,
+                    enemy[index].structure.coordinates.y,
+                ));
             }
         }
     }

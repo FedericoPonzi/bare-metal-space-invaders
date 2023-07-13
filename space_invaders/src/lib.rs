@@ -38,7 +38,7 @@ pub fn run_game(mut fb: impl FrameBufferInterface, time_manager: impl TimeManage
 fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManagerInterface) {
     let mut aliens = init_enemies();
 
-    let mut offset_y = SCREEN_MARGIN;
+    let mut offset_y = 0;
     let mut shoots: [Option<Shoot>; SHOOT_MAX_ALLOC] = [None; SHOOT_MAX_ALLOC];
     let mut hero = Hero::new();
 
@@ -74,7 +74,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         fb.clear_screen();
         direction = move_enemies(&mut offset_y, &mut aliens, direction, delta_ms as u64);
 
-        info!("delta_ms: {}", delta_ms);
+        //info!("delta_ms: {}", delta_ms);
         hero.handle_movement(hero_movement_direction, delta_ms as u64);
 
         // 3. collision detection
