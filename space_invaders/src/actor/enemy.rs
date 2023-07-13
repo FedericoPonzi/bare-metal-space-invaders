@@ -12,10 +12,14 @@ const ENEMY_HEIGHT: u32 = 32;
 
 const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 15;
 const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL: u32 = 15;
+
 const ALIEN_ROWS: u32 = 4;
 pub const ALIEN_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
     / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW))
     - 5;
+
+/// by how many pixel should the enemy go down
+pub const ENEMY_STEP_DOWN: usize = 10; // TODO: should be calculate based on rows, screen size and alien size
 
 const ENEMY_SPEED_PER_MS: i32 = 20; // pixels per second
 
@@ -107,8 +111,6 @@ pub fn move_enemies(
     direction: EnemiesDirection,
     delta_ms: u64,
 ) -> EnemiesDirection {
-    info!("enemy 0: {:?}", enemy[0].structure.coordinates);
-    info!("offset_y:  {}", offset_y);
     let mut lowest_col: Option<(u32, u32)> = None;
     let mut largest_col: Option<(u32, u32)> = None;
     let mut enemies_dead = 0;
@@ -140,16 +142,14 @@ pub fn move_enemies(
     let largest_col = largest_col.unwrap();
     let largest_enemy = enemy[(largest_col.1 * ALIEN_COLS + largest_col.0) as usize];
     let right_limit = direction == EnemiesDirection::Right
-        && largest_enemy.structure.coordinates.x
-            + ENEMY_WIDTH
-            //+ ENEMY_SPEED_PER_MS as u32 * speedup as u32
+        && largest_enemy.structure.coordinates.x + ENEMY_WIDTH
             >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
 
     let left_limit = direction == EnemiesDirection::Left
         && lowest_enemy.structure.coordinates.x <= SCREEN_MARGIN as u32;
     if left_limit || right_limit {
         // move down one row, invert direction
-        *offset_y += 10;
+        *offset_y += ENEMY_STEP_DOWN;
         for x in 0..ALIEN_COLS {
             for y in 0..ALIEN_ROWS {
                 let index = (y * ALIEN_COLS + x) as usize;
