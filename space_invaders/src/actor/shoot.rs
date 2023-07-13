@@ -1,14 +1,17 @@
-use crate::actor::{Actor, ActorStructure};
+use crate::actor::{Actor, ActorStructure, HERO_HEIGHT};
 use crate::framebuffer::coordinates::Coordinates;
 use core::mem;
+use log::info;
 
 const SHOOT: &[u8; 5336] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");
-
 const SHOOT_WIDTH: u32 = 46;
 const SHOOT_HEIGHT: u32 = 29;
 
-const SHOOT_MOVEMENT_OFFSET: u32 = 20;
+// pixels per millisecond.
+const SHOOT_MOVEMENT_OFFSET: f64 = 150.0 / 1000.0;
+
+pub const SHOOT_SPAWN_OFFSET_Y: u32 = HERO_HEIGHT + 10;
 
 // max shots available to render at a time
 pub const SHOOT_MAX_ALLOC: usize = 30;
@@ -50,11 +53,21 @@ impl Shoot {
         }
     }
 
-    pub(crate) fn move_forward(&mut self) {
+    pub(crate) fn move_forward(&mut self, delta: u64) {
         if self.owner == ShootOwner::Hero {
-            self.structure.coordinates.sub_y(SHOOT_MOVEMENT_OFFSET);
+            info!(
+                "Virtual y: {}, SHOOT_MOVEMENT_OFFSET: {}, delta: {}",
+                self.structure.coordinates.y(),
+                SHOOT_MOVEMENT_OFFSET,
+                delta
+            );
+            self.structure
+                .coordinates
+                .sub_virtual_y(SHOOT_MOVEMENT_OFFSET * delta as f64);
         } else {
-            self.structure.coordinates.add_y(SHOOT_MOVEMENT_OFFSET);
+            self.structure
+                .coordinates
+                .add_virtual_y(SHOOT_MOVEMENT_OFFSET * delta as f64);
         }
     }
 
@@ -63,10 +76,10 @@ impl Shoot {
         let shoot_coordinates = shoot_structure.coordinates;
         let shoot_width = shoot_structure.width;
         let shoot_height = shoot_structure.height;
-        let shoot_x = shoot_coordinates.x;
-        let shoot_y = shoot_coordinates.y;
-        let x = coordinates.x;
-        let y = coordinates.y;
+        let shoot_x = shoot_coordinates.x();
+        let shoot_y = shoot_coordinates.y();
+        let x = coordinates.x();
+        let y = coordinates.y();
         let shoot_x_end = shoot_x + shoot_width;
         let shoot_y_end = shoot_y + shoot_height;
         let x_end = x + shoot_width;

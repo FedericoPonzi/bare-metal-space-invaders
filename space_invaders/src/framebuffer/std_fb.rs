@@ -1,4 +1,4 @@
-use crate::actor::{Shoot, ShootOwner};
+use crate::actor::{Shoot, ShootOwner, SHOOT_SPAWN_OFFSET_Y};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::HeroMovementDirection;
@@ -65,7 +65,10 @@ impl FrameBufferInterface for StdFrameBuffer {
                 }
                 Key::Space => {
                     let new_shoot = Shoot::new(
-                        Coordinates::new(hero_coordinates.x, hero_coordinates.y - 20),
+                        Coordinates::new(
+                            hero_coordinates.x(),
+                            hero_coordinates.y() - SHOOT_SPAWN_OFFSET_Y,
+                        ),
                         ShootOwner::Hero,
                     );
                     //info!("pew!");

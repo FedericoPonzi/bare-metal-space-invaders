@@ -9,7 +9,6 @@ mod time;
 pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{EnemiesDirection, Hero, ShootOwner, ALIEN_COLS, SHOOT_MAX_ALLOC};
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
-use core::ops::Sub;
 use core::time::Duration;
 pub use framebuffer::{Coordinates, Pixel};
 
@@ -24,6 +23,7 @@ pub use crate::time::TimeManagerInterface;
 pub use framebuffer::StdFrameBuffer;
 
 pub const SCREEN_WIDTH: usize = 1280;
+pub const SCREEN_WIDTH_NO_MARGIN: usize = SCREEN_WIDTH - SCREEN_MARGIN;
 pub const SCREEN_HEIGHT: usize = 720;
 pub const SCREEN_MARGIN: usize = 30;
 const FPS: u128 = 15;
@@ -64,7 +64,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         //let mut new_shoots: Vec<Shoot> = Vec::new();
         for sh in shoots.iter_mut() {
             if let Some(shoot) = sh.as_mut() {
-                shoot.move_forward();
+                shoot.move_forward(delta_ms as u64);
                 if out_of_screen(&shoot) {
                     //remove it.
                     let _ = sh.take();
@@ -115,8 +115,8 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         let mut alive = false;
         for enemy in aliens.iter() {
             alive = alive || enemy.structure.alive;
-            if enemy.structure.coordinates.y + enemy.structure.height
-                >= hero.structure.coordinates.y
+            if enemy.structure.coordinates.y() + enemy.structure.height
+                >= hero.structure.coordinates.y()
             {
                 info!("Game over!");
                 return;
@@ -152,9 +152,9 @@ fn out_of_screen(shoot: &Shoot) -> bool {
     let structure = shoot.structure;
     let coordinates = structure.coordinates;
     // coordinates.x == 0 ||
-    coordinates.x > (structure.width * structure.height)
-        || coordinates.y == 0
-        || coordinates.y > (structure.width * structure.height)
+    coordinates.x() > (structure.width * structure.height)
+        || coordinates.y() == 0
+        || coordinates.y() > (structure.width * structure.height)
 }
 
 #[derive(Clone, Copy, Debug)]

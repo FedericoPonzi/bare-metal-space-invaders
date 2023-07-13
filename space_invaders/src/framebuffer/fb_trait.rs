@@ -10,10 +10,10 @@ pub trait FrameBufferInterface {
     /// TODO: cleanup.
     /// Bresenham algorithm for draw line: https://gist.github.com/bert/1085538
     fn draw_line(&mut self, start: Coordinates, end: Coordinates, color: Color) {
-        let x1 = F32::from(end.x as f32);
-        let mut x0 = F32::from(start.x as f32);
-        let mut y0 = F32::from(start.y as f32);
-        let y1 = F32::from(end.y as f32);
+        let x1 = F32::from(end.x() as f32);
+        let mut x0 = F32::from(start.x() as f32);
+        let mut y0 = F32::from(start.y() as f32);
+        let y1 = F32::from(end.y() as f32);
 
         let dx = (x1 - x0).abs();
         let sx: F32 = if x0 < x1 { 1f32.into() } else { (-1f32).into() };
@@ -45,7 +45,7 @@ pub trait FrameBufferInterface {
         for y in 0..height {
             for x in 0..width {
                 self.use_pixel(Pixel::new(
-                    Coordinates::new(point.x + x, point.y + y),
+                    Coordinates::new(point.x() + x, point.y() + y),
                     color,
                 ));
             }
@@ -57,21 +57,21 @@ pub trait FrameBufferInterface {
     fn draw_rect(&mut self, point: Coordinates, width: u32, height: u32, color: Color) {
         for y in 0..height {
             self.use_pixel(Pixel::new(
-                Coordinates::new(point.x, point.y + y),
+                Coordinates::new(point.x(), point.y() + y),
                 color.clone(),
             ));
             self.use_pixel(Pixel::new(
-                Coordinates::new(point.x + width, point.y + y),
+                Coordinates::new(point.x() + width, point.y() + y),
                 color.clone(),
             ));
         }
         for x in 0..width {
             self.use_pixel(Pixel::new(
-                Coordinates::new(point.x + x, point.y),
+                Coordinates::new(point.x() + x, point.y()),
                 color.clone(),
             ));
             self.use_pixel(Pixel::new(
-                Coordinates::new(point.x + x, point.y + height),
+                Coordinates::new(point.x() + x, point.y() + height),
                 color.clone(),
             ));
         }
@@ -81,7 +81,7 @@ pub trait FrameBufferInterface {
     fn width(&self) -> usize;
     fn use_pixel(&mut self, pixel: Pixel) {
         let width = self.width();
-        self.raw_buffer()[width * pixel.point.y as usize + pixel.point.x as usize] =
+        self.raw_buffer()[width * pixel.point.y() as usize + pixel.point.x() as usize] =
             pixel.color.as_rgb_u32();
     }
 
@@ -90,7 +90,7 @@ pub trait FrameBufferInterface {
         for pos in 0..image.len() as u32 {
             let y = pos / width;
             let x = pos % width;
-            let (x, y) = (x + top_left.x, y + top_left.y);
+            let (x, y) = (x + top_left.x(), y + top_left.y());
             self.raw_buffer()[fb_width * y as usize + x as usize] = image[pos as usize];
         }
     }

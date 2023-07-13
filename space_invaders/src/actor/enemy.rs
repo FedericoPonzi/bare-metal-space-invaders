@@ -52,6 +52,31 @@ impl Enemy {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn set_green_alien(&mut self) {
+        const ENEMY_GREEN_SPRITE_SIZE: usize = 5120;
+        const ENEMY_GREEN: &[u8; ENEMY_GREEN_SPRITE_SIZE] =
+            include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/green.data");
+        const ENEMY_GREEN_WIDTH: u32 = 40;
+        const ENEMY_GREEN_HEIGHT: u32 = 32;
+        self.structure.width = ENEMY_WIDTH;
+        self.structure.height = ENEMY_HEIGHT;
+        let enemy_sprite: &[u32; ENEMY_GREEN_SPRITE_SIZE / 4] =
+            unsafe { mem::transmute(ENEMY_GREEN) };
+        self.structure.sprite = enemy_sprite;
+    }
+
+    pub fn set_red_alien(&mut self) {
+        const ENEMY_RED_SPRITE_SIZE: usize = 5120;
+        const ENEMY_RED: &[u8; ENEMY_RED_SPRITE_SIZE] =
+            include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/red.data");
+        const ENEMY_RED_WIDTH: u32 = 39;
+        const ENEMY_RED_HEIGHT: u32 = 31;
+        self.structure.width = ENEMY_WIDTH;
+        self.structure.height = ENEMY_HEIGHT;
+        let enemy_sprite: &[u32; ENEMY_RED_SPRITE_SIZE / 4] = unsafe { mem::transmute(ENEMY_RED) };
+        self.structure.sprite = enemy_sprite;
+    }
 }
 
 impl Actor for Enemy {
@@ -69,12 +94,19 @@ pub fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
     for x in 0..ALIEN_COLS {
         let offset_x =
             SCREEN_MARGIN as u32 + ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
+
         for y in 0..ALIEN_ROWS {
             let offset_y =
                 (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y + SCREEN_MARGIN as u32;
             enemies[(y * ALIEN_COLS + x) as usize].structure.coordinates =
                 Coordinates::new(offset_x, offset_y);
             enemies[(y * ALIEN_COLS + x) as usize].virtual_x = offset_x.into();
+            if y == 1 {
+                enemies[(y * ALIEN_COLS + x) as usize].set_green_alien();
+            }
+            if y >= 2 {
+                enemies[(y * ALIEN_COLS + x) as usize].set_red_alien();
+            }
         }
     }
     info!("enemy 0: {:?}", enemies[0].structure.coordinates);
@@ -142,21 +174,21 @@ pub fn move_enemies(
     let largest_col = largest_col.unwrap();
     let largest_enemy = enemy[(largest_col.1 * ALIEN_COLS + largest_col.0) as usize];
     let right_limit = direction == EnemiesDirection::Right
-        && largest_enemy.structure.coordinates.x + ENEMY_WIDTH
+        && largest_enemy.structure.coordinates.x() + ENEMY_WIDTH
             >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
 
     let left_limit = direction == EnemiesDirection::Left
-        && lowest_enemy.structure.coordinates.x <= SCREEN_MARGIN as u32;
+        && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN as u32;
     if left_limit || right_limit {
         // move down one row, invert direction
         *offset_y += ENEMY_STEP_DOWN;
         for x in 0..ALIEN_COLS {
             for y in 0..ALIEN_ROWS {
                 let index = (y * ALIEN_COLS + x) as usize;
-                let new_y = enemy[index].structure.coordinates.y + *offset_y as u32;
+                let new_y = enemy[index].structure.coordinates.y() + *offset_y as u32;
                 if enemy[index].structure.alive {
                     enemy[index].move_to(Coordinates::new(
-                        enemy[index].structure.coordinates.x,
+                        enemy[index].structure.coordinates.x(),
                         new_y,
                     ));
                 }
@@ -173,7 +205,7 @@ pub fn move_enemies(
                 enemy[index].virtual_x += offset_x as f64;
                 enemy[index].move_to(Coordinates::new(
                     enemy[index].virtual_x.round() as u32,
-                    enemy[index].structure.coordinates.y,
+                    enemy[index].structure.coordinates.y(),
                 ));
             }
         }

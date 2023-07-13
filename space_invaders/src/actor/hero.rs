@@ -1,17 +1,20 @@
 use crate::actor::{Actor, ActorStructure};
 use crate::framebuffer::coordinates::Coordinates;
-use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
+use crate::{
+    HeroMovementDirection, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN,
+};
 use core::mem;
 
-const HERO: &[u8; 5336] =
-    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");
-const HERO_WIDTH: u32 = 46;
-const HERO_HEIGHT: u32 = 29;
+const SPRITE_SIZE: usize = 7200;
+const HERO: &[u8; SPRITE_SIZE] =
+    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");
+const HERO_WIDTH: u32 = 60;
+pub(crate) const HERO_HEIGHT: u32 = 29;
 
 const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) as u32 - HERO_WIDTH;
 const HERO_SPAWN_Y: u32 = (SCREEN_HEIGHT - SCREEN_MARGIN - HERO_HEIGHT as usize) as u32;
 
-const HERO_SPEED_MS: u64 = 200; // pixels per millisecond
+const HERO_SPEED_MS: f64 = 200.0 / 1000.0; // pixels per millisecond
 
 #[derive(Copy, Clone)]
 pub struct Hero {
@@ -19,7 +22,7 @@ pub struct Hero {
 }
 impl Default for Hero {
     fn default() -> Self {
-        let hero_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(HERO) };
+        let hero_sprite: &[u32; SPRITE_SIZE / 4] = unsafe { mem::transmute(HERO) };
 
         Hero {
             structure: ActorStructure {
@@ -39,20 +42,23 @@ impl Hero {
     fn move_left(&mut self, delta: u64) {
         self.structure
             .coordinates
-            .sub_x((delta * HERO_SPEED_MS / 1000) as u32);
-        self.structure.coordinates.x =
-            core::cmp::max(SCREEN_MARGIN as u32, self.structure.coordinates.x);
+            .sub_virtual_x(delta as f64 * HERO_SPEED_MS);
+        self.structure
+            .coordinates
+            .set_virtual_x(
+                core::cmp::max(SCREEN_MARGIN as u32, self.structure.coordinates.x()) as f64,
+            );
     }
 
     fn move_right(&mut self, delta: u64) {
         self.structure
             .coordinates
-            .add_x((delta * HERO_SPEED_MS / 1000) as u32);
-        if self.structure.coordinates.x + self.structure.width
-            >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32
+            .add_virtual_x(delta as f64 * HERO_SPEED_MS);
+        if self.structure.coordinates.x() + self.structure.width >= (SCREEN_WIDTH_NO_MARGIN) as u32
         {
-            self.structure.coordinates.x =
-                SCREEN_WIDTH as u32 - self.structure.width - SCREEN_MARGIN as u32;
+            self.structure.coordinates.set_virtual_x(
+                (SCREEN_WIDTH as u32 - self.structure.width - SCREEN_MARGIN as u32) as f64,
+            );
         }
     }
 
