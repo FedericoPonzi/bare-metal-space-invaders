@@ -391,24 +391,14 @@ impl PL011Uart {
     }
 }
 
-//------------------------------------------------------------------------------
-// OS Interface Code
-//------------------------------------------------------------------------------
-
 impl PL011Uart {
-    fn compatible(&self) -> &'static str {
-        Self::COMPATIBLE
-    }
-
     #[inline(always)]
     pub(crate) unsafe fn init(&self) -> Result<(), &'static str> {
         (&self.inner).lock(|inner| inner.init());
 
         Ok(())
     }
-}
 
-impl PL011Uart {
     /// Passthrough of `args` to the `core::fmt::Write` implementation, but guarded by a Mutex to
     /// serialize access.
     pub fn write_char(&self, c: char) {
@@ -426,9 +416,7 @@ impl PL011Uart {
         // Spin until TX FIFO empty is set.
         (&self.inner).lock(|inner| inner.flush());
     }
-}
 
-impl PL011Uart {
     pub(crate) fn read_char(&self) -> char {
         (&self.inner).lock(|inner| inner.read_char_converting(BlockingMode::Blocking).unwrap())
     }

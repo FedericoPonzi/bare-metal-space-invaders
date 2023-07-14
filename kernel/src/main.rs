@@ -27,10 +27,12 @@ mod uart_pl011;
 
 //mod uart;
 use crate::mailbox::{max_clock_speed, set_clock_speed};
+use crate::uart_pl011::PL011Uart;
 use log::{debug, error, info, warn};
 use tock_registers::interfaces::ReadWriteable;
 
 static IRIS_LOGGER: IrisLogger = IrisLogger::new();
+pub static PL011_UART: PL011Uart = unsafe { PL011Uart::new(PL011_UART_START) };
 
 pub const UART_OFFSET: usize = 0x0020_1000;
 pub const START: usize = 0x3F00_0000;
@@ -39,9 +41,11 @@ pub const PL011_UART_START: usize = START + UART_OFFSET;
 #[inline]
 
 unsafe fn kernel_init() -> ! {
-    println!("kernel_init");
     SCTLR_EL1.modify(SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
-
+    unsafe {
+        PL011_UART.init().unwrap();
+    }
+    println!("kernel_init");
     IRIS_LOGGER.init().unwrap();
     allocator::ALLOCATOR.initialize();
     let max_clock_speed = max_clock_speed();

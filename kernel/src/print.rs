@@ -1,14 +1,10 @@
 use crate::uart_pl011::PL011Uart;
-use crate::PL011_UART_START;
+use crate::{PL011_UART, PL011_UART_START};
 use core::fmt;
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-    let uart = unsafe { PL011Uart::new(PL011_UART_START) };
-    unsafe {
-        uart.init().unwrap();
-    }
-    uart.write_fmt(args).unwrap();
+    PL011_UART.write_fmt(args).unwrap();
 }
 
 /// Prints without a newline.
