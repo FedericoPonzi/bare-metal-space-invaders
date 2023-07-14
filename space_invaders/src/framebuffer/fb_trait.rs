@@ -65,7 +65,6 @@ pub trait FrameBufferInterface {
             let x = pos % width;
             let (x, y) = (x + top_left.x(), y + top_left.y());
             let index = fb_width * y as usize + x as usize;
-            println!("index: {}, pos: {}", index, pos);
             self.raw_buffer()[index] = image[pos as usize];
         }
     }

@@ -1,3 +1,5 @@
+use log::info;
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Coordinates {
     pub virtual_x: f64,

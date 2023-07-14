@@ -136,26 +136,12 @@ pub fn move_enemies(
     enemy: &mut [Enemy; TOTAL_ENEMIES],
     direction: EnemiesDirection,
     delta_ms: u64,
+    lowest_col: &mut (u32, u32),
+    largest_col: &mut (u32, u32),
+    enemies_dead: usize,
 ) -> EnemiesDirection {
-    let mut lowest_col: Option<(u32, u32)> = None;
-    let mut largest_col: Option<(u32, u32)> = None;
-    let mut enemies_dead = 0;
     // determine the direction.
-    for x in 0..ALIEN_COLS {
-        for y in 0..ALIEN_ROWS {
-            let enemy = enemy[(y * ALIEN_COLS + x) as usize];
-            if !enemy.structure.alive {
-                enemies_dead += 1;
-                continue;
-            }
-            if largest_col.is_none() || core::cmp::max(largest_col.unwrap().0, x) == x {
-                largest_col = Some((x, y));
-            }
-            if lowest_col.is_none() || core::cmp::min(lowest_col.unwrap().0, x) == x {
-                lowest_col = Some((x, y));
-            }
-        }
-    }
+
     // speed up per dead enemy
     let speedup = (ENEMY_SPEED_PER_MS as f32 * (enemies_dead as f32 / TOTAL_ENEMIES as f32)) as i32;
     let speedup = if direction == EnemiesDirection::Right {
@@ -163,47 +149,59 @@ pub fn move_enemies(
     } else {
         -speedup
     };
-    let lowest_col = lowest_col.unwrap();
+
     let lowest_enemy = enemy[(lowest_col.1 * ALIEN_COLS + lowest_col.0) as usize];
-    let largest_col = largest_col.unwrap();
     let largest_enemy = enemy[(largest_col.1 * ALIEN_COLS + largest_col.0) as usize];
     let right_limit = direction == EnemiesDirection::Right
         && largest_enemy.structure.coordinates.x() + ENEMY_WIDTH
             >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
 
+    *lowest_col = (ALIEN_COLS, 0);
+    *largest_col = (0, 0);
+
     let left_limit = direction == EnemiesDirection::Left
         && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN as u32;
+
     if left_limit || right_limit {
         // move down one row, invert direction
         *offset_y += ENEMY_STEP_DOWN;
         for x in 0..ALIEN_COLS {
             for y in 0..ALIEN_ROWS {
                 let index = (y * ALIEN_COLS + x) as usize;
-                let new_y = enemy[index].structure.coordinates.y() + *offset_y as u32;
-                if enemy[index].structure.alive {
-                    enemy[index].move_to(Coordinates::new(
-                        enemy[index].structure.coordinates.x(),
-                        new_y,
-                    ));
+                let mut enemy = &mut enemy[index];
+
+                let new_y = enemy.structure.coordinates.y() + *offset_y as u32;
+                if enemy.structure.alive {
+                    enemy.move_to(Coordinates::new(enemy.structure.coordinates.x(), new_y));
+                }
+                if core::cmp::max(largest_col.0, x) == x {
+                    *largest_col = (x, y);
+                }
+                if core::cmp::min(lowest_col.0, x) == x {
+                    *lowest_col = (x, y);
                 }
             }
         }
         return direction.invert_direction();
     }
 
+    let offset_x = direction.to_offset(delta_ms, speedup);
+
     for x in 0..ALIEN_COLS {
-        let offset_x = direction.to_offset(delta_ms, speedup);
         for y in 0..ALIEN_ROWS {
             let index = (y * ALIEN_COLS + x) as usize;
-            if enemy[index].structure.alive {
-                enemy[index]
-                    .structure
-                    .coordinates
-                    .add_virtual_x(offset_x as f64);
-                enemy[index].move_to(Coordinates::new(
-                    enemy[index].structure.coordinates.x(),
-                    enemy[index].structure.coordinates.y(),
-                ));
+            let enemey = &mut enemy[index];
+            if !enemey.structure.alive {
+                continue;
+            }
+
+            enemey.structure.coordinates.add_virtual_x(offset_x as f64);
+
+            if core::cmp::max(largest_col.0, x) == x {
+                *largest_col = (x, y);
+            }
+            if core::cmp::min(lowest_col.0, x) == x {
+                *lowest_col = (x, y);
             }
         }
     }

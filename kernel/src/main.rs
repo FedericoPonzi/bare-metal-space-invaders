@@ -11,6 +11,7 @@ extern crate alloc;
 use crate::logger::IrisLogger;
 use core::panic::PanicInfo;
 use cortex_a::asm;
+use cortex_a::registers::SCTLR_EL1;
 
 //mod allocator;
 mod boot;
@@ -25,7 +26,9 @@ mod time;
 mod uart_pl011;
 
 //mod uart;
+use crate::mailbox::{max_clock_speed, set_clock_speed};
 use log::{debug, error, info, warn};
+use tock_registers::interfaces::ReadWriteable;
 
 static IRIS_LOGGER: IrisLogger = IrisLogger::new();
 
@@ -34,11 +37,18 @@ pub const START: usize = 0x3F00_0000;
 pub const PL011_UART_START: usize = START + UART_OFFSET;
 
 #[inline]
+
 unsafe fn kernel_init() -> ! {
     println!("kernel_init");
+    SCTLR_EL1.modify(SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
+
     IRIS_LOGGER.init().unwrap();
     allocator::ALLOCATOR.initialize();
+    let max_clock_speed = max_clock_speed();
+    info!("Kernel speed: {:?}", max_clock_speed);
+    set_clock_speed(max_clock_speed.unwrap());
 
+    //panic!();
     info!("kernel_init");
     extern "C" {
         static mut __text_end: usize;

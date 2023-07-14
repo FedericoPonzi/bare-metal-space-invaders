@@ -125,6 +125,8 @@ impl From<u32> for ReqResp {
 }
 const MBOX_REQUEST: u32 = 0;
 const BOARD_SERIAL_REQ: u32 = 0x00010004;
+const GET_MAX_CLOCK_RATE: u32 = 0x00030004;
+const SET_CLOCK_RATE: u32 = 0x00038002;
 
 const LAST_TAG: u32 = 0;
 
@@ -146,7 +148,7 @@ pub fn query_board_serial() -> Option<u64> {
     let message = board_serial_message();
     println!("Sending message to channel PROP: {:?}", message);
 
-    return if send_message(Channel::PROP, &message) {
+    return if send_message_sync(Channel::PROP, &message) {
         info!(
             "Serial number is: {:#04x}/{:#04x}",
             message.0[5], message.0[4]
@@ -218,7 +220,7 @@ const fn lfb_message() -> Message<LFB_MESSAGE_SIZE> {
 
 pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
     let message = lfb_message();
-    let res = send_message(Channel::PROP, &message);
+    let res = send_message_sync(Channel::PROP, &message);
     return if res && message.0[28] != 0 {
         //convert GPU address to ARM address
         let fb_ptr_raw = (message.0[28] & 0x3FFFFFFF) as usize;
@@ -267,6 +269,82 @@ pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
     };
 }
 
+pub fn set_clock_speed(new_clock: u32) {
+    let message = get_set_clock_rate_message(new_clock);
+    info!(
+        "Sending message to channel PROP to set clock speed: {:?}",
+        message
+    );
+
+    if send_message_sync(Channel::PROP, &message) {
+        let clock_id = message.0[4];
+        let rate = message.0[5];
+
+        info!("New rate for {:?} is: {:?}", clock_id, rate);
+    } else {
+        info!("Failed to sending message to set clock speed.");
+    }
+}
+
+pub fn max_clock_speed() -> Option<u32> {
+    //command 0x00030004 ARM clock ID = 0x3
+    // BCM2835_MAILBOX_TAG_GET_MAX_CLOCK_RATE 0x00030004
+
+    let message = max_clock_rate_message();
+    info!(
+        "Sending message to channel PROP for max clock speed: {:?}",
+        message
+    );
+
+    if send_message_sync(Channel::PROP, &message) {
+        info!("message: {:?}", message);
+        let core_id = message.0[5];
+        let max_speed_hz = message.0[6];
+        info!(
+            "Max clock speed for core id: {:?} is : {:?}hz",
+            core_id, max_speed_hz
+        );
+        Some(max_speed_hz)
+    } else {
+        info!("Failed to sending message to query max clock speed.");
+        None
+    }
+}
+const GET_CLOCK_RATE_MESSAGE_SIZE: usize = 10;
+
+fn get_set_clock_rate_message(new_clock_hz: u32) -> Message<GET_CLOCK_RATE_MESSAGE_SIZE> {
+    let mut ret = [0u32; GET_CLOCK_RATE_MESSAGE_SIZE];
+    ret[0] = (SERIAL_MESSAGE_SIZE * mem::size_of::<u32>()) as u32;
+    ret[1] = MBOX_REQUEST;
+
+    ret[2] = SET_CLOCK_RATE; // set clock rate
+    ret[3] = 3 * mem::size_of::<u32>() as u32; // value buffer size in bytes
+    ret[4] = 0x1; //clock id
+    ret[5] = new_clock_hz; // rate in hz
+    ret[6] = 0; // skip setting turbo
+    ret[7] = 0;
+    ret[8] = LAST_TAG;
+    Message(ret)
+}
+
+/// rate in hz.
+const MAX_CLOCK_RATE_MESSAGE_SIZE: usize = 9;
+fn max_clock_rate_message() -> Message<MAX_CLOCK_RATE_MESSAGE_SIZE> {
+    let mut ret = [0u32; MAX_CLOCK_RATE_MESSAGE_SIZE];
+    ret[0] = (MAX_CLOCK_RATE_MESSAGE_SIZE * mem::size_of::<u32>()) as u32;
+    ret[1] = MBOX_REQUEST;
+
+    //tag:
+    ret[2] = GET_MAX_CLOCK_RATE; // get serial number command
+    ret[3] = 8; // value buffer size in bytes
+    ret[4] = 8; // :b 31 clear: request, | b31 set: response b30-b0: value length in bytes
+
+    ret[5] = 0x1; //clock id
+    ret[6] = 0; // used by the response.
+    ret[7] = LAST_TAG;
+    Message(ret)
+}
+
 const SERIAL_MESSAGE_SIZE: usize = 9;
 fn board_serial_message() -> Message<SERIAL_MESSAGE_SIZE> {
     const SERIAL_MESSAGE_TAG: u32 = 0x00010004;
@@ -274,9 +352,9 @@ fn board_serial_message() -> Message<SERIAL_MESSAGE_SIZE> {
     ret[0] = (SERIAL_MESSAGE_SIZE * mem::size_of::<u32>()) as u32;
     ret[1] = MBOX_REQUEST;
 
-    ret[2] = SERIAL_MESSAGE_TAG; // get serial number command
-    ret[3] = 8; // buffer size
-    ret[4] = 8;
+    ret[2] = SERIAL_MESSAGE_TAG; // tag identifier
+    ret[3] = 8; // value buffer size in bytes
+    ret[4] = 8; //Request codes:b 31 clear: request
     ret[5] = 8; // clear output buffer
     ret[6] = 0;
 
@@ -288,7 +366,7 @@ pub const IO_BASE: usize = 0x3F00_0000;
 pub const VIDEOCORE_MBOX_BASE: usize = IO_BASE + VIDEOCORE_MBOX_OFFSET;
 pub const VIDEOCORE_MBOX_OFFSET: usize = 0x0000_B880;
 
-fn send_message<const T: usize>(channel: Channel, message: &Message<T>) -> bool {
+fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> bool {
     let raw_ptr = message.0.as_ptr();
     // This is needed because slices are fat pointers and I need to convert it to a thin pointer first.
     let raw_ptr_addr = raw_ptr.cast::<usize>();

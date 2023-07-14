@@ -44,6 +44,10 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
 
     let mut direction = EnemiesDirection::Right;
     let mut last_loop = time_manager.now();
+    // used for speedup calculation.
+    let mut enemies_dead = 0;
+    let mut lowest_col = (ALIEN_COLS, 0);
+    let mut largest_col = (0, 0);
     use core::ops::Sub;
     loop {
         let now = time_manager.now();
@@ -76,7 +80,15 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             }
         }
 
-        direction = move_enemies(&mut offset_y, &mut aliens, direction, delta_ms as u64);
+        direction = move_enemies(
+            &mut offset_y,
+            &mut aliens,
+            direction,
+            delta_ms as u64,
+            &mut lowest_col,
+            &mut largest_col,
+            enemies_dead,
+        );
 
         info!("delta_ms: {}", delta_ms);
         hero.handle_movement(hero_movement_direction, delta_ms as u64);
@@ -100,6 +112,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
                                 alien.structure.alive = false;
                                 info!("Alien is dead!");
                                 has_hit = true;
+                                enemies_dead += 1;
                                 break;
                             }
                         }
@@ -118,6 +131,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
 
         let mut alive = false;
+
         for enemy in aliens.iter() {
             alive = alive || enemy.structure.alive;
             if enemy.structure.coordinates.y() + enemy.structure.height
@@ -145,23 +159,10 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             shoot.draw(fb);
         }
 
-        fb.update();
-        //info!("Drawing hero..");
-
         //info!("drawing shoots");
         //info!("Updating fb...");
         fb.update();
         //info!("Done updating fb");
-
-        #[cfg(feature = "std")]
-        let delta_next =
-            Duration::from_millis(1000 / FPS as u64).saturating_sub(time_manager.since(last_loop));
-        #[cfg(feature = "std")]
-        if delta_next.as_millis() > 0 {
-            #[cfg(feature = "std")]
-            std::thread::sleep(delta_next);
-        }
-        //info!("End of the loop");
     }
 }
 
