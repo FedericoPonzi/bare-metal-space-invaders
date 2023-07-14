@@ -27,7 +27,7 @@ mod std_time {
             TimeManager
         }
     }
-    
+
     impl TimeManagerInterface for TimeManager {
         /// Duration from EPOCH.
         fn now(&self) -> Duration {

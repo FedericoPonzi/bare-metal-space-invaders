@@ -52,7 +52,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
 
         // 1. Get input
         let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates, fb);
-        if matches!(hero_movement_direction, HeroMovementDirection::Restart_Game) {
+        if matches!(hero_movement_direction, HeroMovementDirection::RestartGame) {
             info!("Restarting game...");
             return;
         }
@@ -75,7 +75,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
                 }
             }
         }
-        fb.clear_screen();
+
         direction = move_enemies(&mut offset_y, &mut aliens, direction, delta_ms as u64);
 
         info!("delta_ms: {}", delta_ms);
@@ -133,18 +133,22 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
         //info!("Start drawing things");
         // 4. draw things:
+        fb.clear_screen();
+
         for enemy in aliens.iter() {
             if enemy.structure.alive {
                 enemy.draw(fb)
             }
         }
-        fb.update();
-        //info!("Drawing hero..");
         hero.draw(fb);
-        //info!("drawing shoots");
         for shoot in shoots.iter_mut().flatten() {
             shoot.draw(fb);
         }
+
+        fb.update();
+        //info!("Drawing hero..");
+
+        //info!("drawing shoots");
         //info!("Updating fb...");
         fb.update();
         //info!("Done updating fb");
@@ -161,10 +165,10 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
     }
 }
 
+#[inline(always)]
 fn out_of_screen(shoot: &Shoot) -> bool {
     let structure = shoot.structure;
     let coordinates = structure.coordinates;
-    // coordinates.x == 0 ||
     coordinates.x() > (structure.width * structure.height)
         || coordinates.y() == 0
         || coordinates.y() > (structure.width * structure.height)
@@ -175,5 +179,5 @@ pub enum HeroMovementDirection {
     Left,
     Right,
     Still,
-    Restart_Game,
+    RestartGame,
 }

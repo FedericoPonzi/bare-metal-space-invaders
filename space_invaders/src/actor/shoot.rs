@@ -61,12 +61,6 @@ impl Shoot {
     #[inline(always)]
     pub(crate) fn move_forward(&mut self, delta: u64) {
         if self.owner == ShootOwner::Hero {
-            info!(
-                "Virtual y: {}, SHOOT_MOVEMENT_OFFSET: {}, delta: {}",
-                self.structure.coordinates.y(),
-                SHOOT_MOVEMENT_OFFSET,
-                delta
-            );
             self.structure
                 .coordinates
                 .sub_virtual_y(SHOOT_MOVEMENT_OFFSET * delta as f64);

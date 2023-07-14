@@ -52,6 +52,7 @@ impl FrameBufferInterface for StdFrameBuffer {
     fn get_input_keys(
         &self,
         hero_coordinates: &Coordinates,
+        fb: &impl FrameBufferInterface,
     ) -> (HeroMovementDirection, Option<Shoot>) {
         let mut hero_movement_direction = HeroMovementDirection::Still;
         let mut shoot = None;
@@ -70,6 +71,7 @@ impl FrameBufferInterface for StdFrameBuffer {
                             hero_coordinates.y() - SHOOT_SPAWN_OFFSET_Y,
                         ),
                         ShootOwner::Hero,
+                        fb,
                     );
                     //info!("pew!");
                     shoot = Some(new_shoot);

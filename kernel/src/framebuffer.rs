@@ -24,26 +24,30 @@ pub struct FrameBuffer {
 }
 
 impl space_invaders::FrameBufferInterface for FrameBuffer {
+    #[inline(always)]
     fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         unsafe { crate::allocator::ALLOCATOR.alloc(layout) }
     }
+    #[inline(always)]
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer
     }
 
+    #[inline(always)]
     fn width(&self) -> usize {
         self.width as usize
     }
 
+    #[inline(always)]
     fn update(&mut self) {
-        //let cnt = self.width as usize * self.height as usize;
         unsafe {
             let dst_buffer = self.lfb_ptr as *const u32 as *mut u32;
             let src_buffer = self.buffer.as_ptr();
-            core::ptr::copy(src_buffer, dst_buffer, self.buffer.len());
+            core::ptr::copy_nonoverlapping(src_buffer, dst_buffer, self.buffer.len());
         }
     }
 
+    #[inline(always)]
     fn get_input_keys(
         &self,
         hero_coordinates: &Coordinates,
@@ -63,7 +67,7 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
                         hero = HeroMovementDirection::Right;
                     }
                     'r' | 'R' => {
-                        hero = HeroMovementDirection::Restart_Game;
+                        hero = HeroMovementDirection::RestartGame;
                     }
                     ' ' => {
                         let new_shoot = Shoot::new(
@@ -94,6 +98,7 @@ impl FrameBuffer {
     pub fn max_screen_size(&self) -> u32 {
         (self.depth_bits) * self.width * self.height
     }
+    #[inline(always)]
     pub fn clear_screen(&mut self) {
         unsafe {
             core::ptr::write_bytes(

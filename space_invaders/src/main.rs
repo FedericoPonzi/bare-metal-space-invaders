@@ -1,4 +1,5 @@
 use env_logger::Env;
+use log::info;
 use space_invaders::{run_game, StdFrameBuffer};
 
 fn main() {

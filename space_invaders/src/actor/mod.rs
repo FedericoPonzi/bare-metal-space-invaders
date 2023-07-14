@@ -66,7 +66,6 @@ pub trait Actor {
         self.set_coordinates(top_left_offset);
     }
 
-    #[inline(always)]
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         let structure = self.get_structure();
         /*fb.draw_rect_fill(
