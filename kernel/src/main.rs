@@ -22,18 +22,24 @@ mod print;
 mod time;
 mod uart_pl011;
 
-//mod uart;
 use crate::mailbox::{max_clock_speed, set_clock_speed};
+use crate::mmio::PL011_UART_START;
 use crate::uart_pl011::PL011Uart;
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use tock_registers::interfaces::ReadWriteable;
 
 static IRIS_LOGGER: IrisLogger = IrisLogger::new();
 pub static PL011_UART: PL011Uart = unsafe { PL011Uart::new(PL011_UART_START) };
 
-pub const UART_OFFSET: usize = 0x0020_1000;
-pub const START: usize = 0x3F00_0000;
-pub const PL011_UART_START: usize = START + UART_OFFSET;
+mod mmio {
+    pub const IO_BASE: usize = 0x3F00_0000;
+    pub const UART_OFFSET: usize = 0x0020_1000;
+    pub const VIDEOCORE_MBOX_OFFSET: usize = 0x0000_B880;
+    pub const TIME_OFFSET: usize = 0x0000_3000;
+    pub const TIMER_REG_BASE: usize = IO_BASE + TIME_OFFSET;
+    pub const PL011_UART_START: usize = IO_BASE + UART_OFFSET;
+    pub const VIDEOCORE_MBOX_BASE: usize = IO_BASE + VIDEOCORE_MBOX_OFFSET;
+}
 
 #[inline]
 

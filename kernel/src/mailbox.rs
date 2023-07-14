@@ -1,13 +1,13 @@
-use alloc::vec;
-//use crate::const_assert_size;
+use crate::framebuffer::FrameBuffer;
 use crate::mailbox::ReqResp::ResponseSuccessful;
-use crate::{error, info, println, PL011_UART_START};
+use crate::mmio::VIDEOCORE_MBOX_BASE;
+use crate::uart_pl011::PL011Uart;
+use crate::{error, println, PL011_UART_START};
+use alloc::vec;
 use core::mem;
 use core::ops::BitAnd;
-//use log::{error, info};
-use crate::framebuffer::FrameBuffer;
-use crate::uart_pl011::PL011Uart;
 use cortex_a::asm;
+use log::info;
 use space_invaders::{SCREEN_HEIGHT, SCREEN_WIDTH};
 
 const LFB_MESSAGE_SIZE: usize = 35;
@@ -361,10 +361,6 @@ fn board_serial_message() -> Message<SERIAL_MESSAGE_SIZE> {
     ret[7] = LAST_TAG;
     Message(ret)
 }
-
-pub const IO_BASE: usize = 0x3F00_0000;
-pub const VIDEOCORE_MBOX_BASE: usize = IO_BASE + VIDEOCORE_MBOX_OFFSET;
-pub const VIDEOCORE_MBOX_OFFSET: usize = 0x0000_B880;
 
 fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> bool {
     let raw_ptr = message.0.as_ptr();

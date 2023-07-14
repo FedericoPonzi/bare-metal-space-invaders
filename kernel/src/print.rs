@@ -1,5 +1,4 @@
-use crate::uart_pl011::PL011Uart;
-use crate::{PL011_UART, PL011_UART_START};
+use crate::PL011_UART;
 use core::fmt;
 
 #[doc(hidden)]

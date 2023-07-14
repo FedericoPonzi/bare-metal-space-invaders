@@ -1,10 +1,7 @@
 use crate::info;
 
+use crate::mmio::TIMER_REG_BASE;
 use core::time::Duration;
-
-pub const IO_BASE: usize = 0x3F00_0000;
-pub const TIME_OFFSET: usize = 0x0000_3000;
-pub const TIMER_REG_BASE: usize = IO_BASE + TIME_OFFSET;
 
 #[repr(C)]
 //TODO: Wrap this regiseters in register ds.
