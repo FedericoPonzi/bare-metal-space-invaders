@@ -53,6 +53,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         let now = time_manager.now();
         let delta_ms = now.sub(last_loop).as_millis();
         last_loop = now;
+        info!("delta_ms: {}", delta_ms);
 
         // 1. Get input
         let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates, fb);
@@ -90,7 +91,6 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             enemies_dead,
         );
 
-        info!("delta_ms: {}", delta_ms);
         hero.handle_movement(hero_movement_direction, delta_ms as u64);
 
         // 3. collision detection
@@ -145,7 +145,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             info!("Game over, you won!");
             return;
         }
-        //info!("Start drawing things");
+
         // 4. draw things:
         fb.clear_screen();
 
@@ -159,7 +159,6 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             shoot.draw(fb);
         }
 
-        //info!("drawing shoots");
         //info!("Updating fb...");
         fb.update();
         //info!("Done updating fb");

@@ -15,7 +15,7 @@ const SHOOT_MOVEMENT_OFFSET: f64 = 200.0 / 1000.0;
 pub const SHOOT_SPAWN_OFFSET_Y: u32 = HERO_HEIGHT + 10;
 
 // max shots available to render at a time
-pub const SHOOT_MAX_ALLOC: usize = 30;
+pub const SHOOT_MAX_ALLOC: usize = 5;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ShootOwner {

@@ -13,15 +13,12 @@ use core::panic::PanicInfo;
 use cortex_a::asm;
 use cortex_a::registers::SCTLR_EL1;
 
-//mod allocator;
-mod boot;
-mod gpio;
-mod mailbox;
-mod print;
-//mod uart;
 mod allocator;
+mod boot;
 mod framebuffer;
 mod logger;
+mod mailbox;
+mod print;
 mod time;
 mod uart_pl011;
 
