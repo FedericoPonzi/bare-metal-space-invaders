@@ -1,11 +1,11 @@
-use crate::actor::{Actor, ActorStructure};
+use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::coordinates::Coordinates;
-use crate::{SCREEN_MARGIN, SCREEN_WIDTH};
+use crate::{FrameBufferInterface, SCREEN_MARGIN, SCREEN_WIDTH};
 use core::mem;
 use log::info;
 
 const SPRITE_SIZE: usize = 5120;
-const ENEMY: &[u8; SPRITE_SIZE] =
+pub const ENEMY: &[u8; SPRITE_SIZE] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data");
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
@@ -16,7 +16,7 @@ const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL: u32 = 15;
 const ALIEN_ROWS: u32 = 4;
 pub const ALIEN_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
     / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW))
-    - 5;
+    - 10;
 
 /// by how many pixel should the enemy go down
 pub const ENEMY_STEP_DOWN: usize = 10; // TODO: should be calculate based on rows, screen size and alien size
@@ -29,68 +29,59 @@ pub const TOTAL_ENEMIES: usize = (ALIEN_ROWS * ALIEN_COLS) as usize;
 pub struct Enemy {
     pub(crate) structure: ActorStructure,
     // every loop iteration, might cause a sub-pixel movement.
-    // virtual x has the `real` value that is used to set the new x.
-    virtual_x: f64,
 }
-impl Default for Enemy {
-    fn default() -> Self {
-        let enemy_sprite: &[u32; SPRITE_SIZE / 4] = unsafe { mem::transmute(ENEMY) };
 
+impl Enemy {
+    pub fn new(fb: &impl FrameBufferInterface) -> Self {
         Enemy {
             structure: ActorStructure {
-                sprite: enemy_sprite,
+                sprite: Sprite::new(ENEMY, fb),
                 width: ENEMY_WIDTH,
                 height: ENEMY_HEIGHT,
                 alive: true,
                 coordinates: Coordinates::new(0, 0),
             },
-            virtual_x: 0f64,
         }
     }
-}
-impl Enemy {
-    pub fn new() -> Self {
-        Self::default()
-    }
 
-    pub fn set_green_alien(&mut self) {
-        const ENEMY_GREEN_SPRITE_SIZE: usize = 5120;
-        const ENEMY_GREEN: &[u8; ENEMY_GREEN_SPRITE_SIZE] =
+    pub fn set_green_alien(&mut self, fb: &impl FrameBufferInterface) {
+        const ENEMY_GREEN: &[u8] =
             include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/green.data");
         const ENEMY_GREEN_WIDTH: u32 = 40;
         const ENEMY_GREEN_HEIGHT: u32 = 32;
-        self.structure.width = ENEMY_WIDTH;
-        self.structure.height = ENEMY_HEIGHT;
-        let enemy_sprite: &[u32; ENEMY_GREEN_SPRITE_SIZE / 4] =
-            unsafe { mem::transmute(ENEMY_GREEN) };
-        self.structure.sprite = enemy_sprite;
+        self.structure.width = ENEMY_GREEN_WIDTH;
+        self.structure.height = ENEMY_GREEN_HEIGHT;
+
+        self.structure.sprite = Sprite::new(ENEMY_GREEN, fb);
     }
 
-    pub fn set_red_alien(&mut self) {
-        const ENEMY_RED_SPRITE_SIZE: usize = 5120;
-        const ENEMY_RED: &[u8; ENEMY_RED_SPRITE_SIZE] =
+    pub fn set_red_alien(&mut self, fb: &impl FrameBufferInterface) {
+        const ENEMY_RED: &[u8] =
             include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/red.data");
         const ENEMY_RED_WIDTH: u32 = 39;
         const ENEMY_RED_HEIGHT: u32 = 31;
-        self.structure.width = ENEMY_WIDTH;
-        self.structure.height = ENEMY_HEIGHT;
-        let enemy_sprite: &[u32; ENEMY_RED_SPRITE_SIZE / 4] = unsafe { mem::transmute(ENEMY_RED) };
-        self.structure.sprite = enemy_sprite;
+        self.structure.width = ENEMY_RED_WIDTH;
+        self.structure.height = ENEMY_RED_HEIGHT;
+
+        self.structure.sprite = Sprite::new(ENEMY_RED, fb);
     }
 }
 
 impl Actor for Enemy {
+    #[inline(always)]
     fn get_structure(&self) -> &ActorStructure {
         &self.structure
     }
-
+    #[inline(always)]
     fn set_coordinates(&mut self, coordinates: Coordinates) {
         self.structure.coordinates = coordinates;
     }
 }
 
-pub fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
-    let mut enemies = [Enemy::new(); TOTAL_ENEMIES];
+#[inline(always)]
+pub fn init_enemies(fb: &impl FrameBufferInterface) -> [Enemy; TOTAL_ENEMIES] {
+    let mut enemies = [Enemy::new(fb); TOTAL_ENEMIES];
+
     for x in 0..ALIEN_COLS {
         let offset_x =
             SCREEN_MARGIN as u32 + ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
@@ -98,18 +89,18 @@ pub fn init_enemies() -> [Enemy; TOTAL_ENEMIES] {
         for y in 0..ALIEN_ROWS {
             let offset_y =
                 (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y + SCREEN_MARGIN as u32;
+
             enemies[(y * ALIEN_COLS + x) as usize].structure.coordinates =
                 Coordinates::new(offset_x, offset_y);
-            enemies[(y * ALIEN_COLS + x) as usize].virtual_x = offset_x.into();
+
             if y == 1 {
-                enemies[(y * ALIEN_COLS + x) as usize].set_green_alien();
+                enemies[(y * ALIEN_COLS + x) as usize].set_green_alien(fb);
             }
             if y >= 2 {
-                enemies[(y * ALIEN_COLS + x) as usize].set_red_alien();
+                enemies[(y * ALIEN_COLS + x) as usize].set_red_alien(fb);
             }
         }
     }
-    info!("enemy 0: {:?}", enemies[0].structure.coordinates);
     enemies
 }
 #[derive(Eq, PartialEq, Debug)]
@@ -118,6 +109,7 @@ pub enum EnemiesDirection {
     Left,
 }
 impl EnemiesDirection {
+    #[inline(always)]
     fn invert_direction(&self) -> Self {
         use EnemiesDirection::{Left, Right};
         match self {
@@ -125,6 +117,7 @@ impl EnemiesDirection {
             Left => Right,
         }
     }
+    #[inline(always)]
     fn to_offset(&self, delta_ms: u64, speedup: i32) -> i32 {
         use EnemiesDirection::{Left, Right};
         let delta_ms = delta_ms as i32;
@@ -137,6 +130,7 @@ impl EnemiesDirection {
 }
 /// largest_x is the largest x coordinate of still alive enemy
 /// lowest_x is the lowest x coordinate of still alive enemy
+#[inline(always)]
 pub fn move_enemies(
     offset_y: &mut usize,
     enemy: &mut [Enemy; TOTAL_ENEMIES],
@@ -202,9 +196,12 @@ pub fn move_enemies(
         for y in 0..ALIEN_ROWS {
             let index = (y * ALIEN_COLS + x) as usize;
             if enemy[index].structure.alive {
-                enemy[index].virtual_x += offset_x as f64;
+                enemy[index]
+                    .structure
+                    .coordinates
+                    .add_virtual_x(offset_x as f64);
                 enemy[index].move_to(Coordinates::new(
-                    enemy[index].virtual_x.round() as u32,
+                    enemy[index].structure.coordinates.x(),
                     enemy[index].structure.coordinates.y(),
                 ));
             }

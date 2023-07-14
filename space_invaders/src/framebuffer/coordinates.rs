@@ -12,27 +12,33 @@ impl Coordinates {
             virtual_y: y as f64,
         }
     }
-
-    pub fn add_virtual_x(&mut self, x: f64) {
-        self.virtual_x += x;
-    }
-
-    pub fn sub_virtual_x(&mut self, x: f64) {
-        self.virtual_x -= x;
-    }
+    #[inline(always)]
     pub fn x(&self) -> u32 {
         self.virtual_x as u32
     }
+    #[inline(always)]
     pub fn y(&self) -> u32 {
         self.virtual_y as u32
     }
+
+    #[inline(always)]
+    pub fn add_virtual_x(&mut self, x: f64) {
+        self.virtual_x += x;
+    }
+    #[inline(always)]
+    pub fn sub_virtual_x(&mut self, x: f64) {
+        self.virtual_x -= x;
+    }
+
+    #[inline(always)]
     pub fn set_virtual_x(&mut self, x: f64) {
         self.virtual_x = x;
     }
-
+    #[inline(always)]
     pub fn sub_virtual_y(&mut self, p0: f64) {
         self.virtual_y -= p0;
     }
+    #[inline(always)]
     pub fn add_virtual_y(&mut self, p0: f64) {
         self.virtual_y += p0;
     }

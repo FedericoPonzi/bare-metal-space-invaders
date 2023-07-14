@@ -1,13 +1,10 @@
 use crate::actor::{Shoot, ShootOwner, SHOOT_SPAWN_OFFSET_Y};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::HeroMovementDirection;
+use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
 use log::info;
 use minifb::{Key, Window, WindowOptions};
 use std::vec;
-
-const WIDTH: usize = 1280;
-const HEIGHT: usize = 720;
 
 pub struct StdFrameBuffer {
     pub(crate) window: Window,
@@ -18,14 +15,14 @@ impl StdFrameBuffer {
     pub fn new() -> Self {
         let mut window = Window::new(
             "Test - ESC to exit",
-            WIDTH,
-            HEIGHT,
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
             WindowOptions::default(),
         )
         .unwrap_or_else(|e| {
             panic!("{}", e);
         });
-        let buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
+        let buffer: Vec<u32> = vec![0; SCREEN_WIDTH * SCREEN_HEIGHT];
 
         // Limit to max ~60 fps update rate
         window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
@@ -35,17 +32,20 @@ impl StdFrameBuffer {
 }
 
 impl FrameBufferInterface for StdFrameBuffer {
+    fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
+        unsafe { std::alloc::alloc(layout) }
+    }
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer
     }
 
     fn width(&self) -> usize {
-        WIDTH
+        SCREEN_WIDTH
     }
 
     fn update(&mut self) {
         self.window
-            .update_with_buffer(&self.buffer, WIDTH, HEIGHT)
+            .update_with_buffer(&self.buffer, SCREEN_WIDTH, SCREEN_HEIGHT)
             .unwrap();
     }
 

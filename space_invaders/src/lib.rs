@@ -36,21 +36,26 @@ pub fn run_game(mut fb: impl FrameBufferInterface, time_manager: impl TimeManage
 }
 
 fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManagerInterface) {
-    let mut aliens = init_enemies();
+    let mut aliens = init_enemies(fb);
 
     let mut offset_y = 0;
     let mut shoots: [Option<Shoot>; SHOOT_MAX_ALLOC] = [None; SHOOT_MAX_ALLOC];
-    let mut hero = Hero::new();
+    let mut hero = Hero::new(fb);
 
     let mut direction = EnemiesDirection::Right;
     let mut last_loop = time_manager.now();
-
+    use core::ops::Sub;
     loop {
-        let delta_ms = time_manager.since(last_loop).as_millis();
-        last_loop = time_manager.now();
+        let now = time_manager.now();
+        let delta_ms = now.sub(last_loop).as_millis();
+        last_loop = now;
 
         // 1. Get input
-        let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates);
+        let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates, fb);
+        if matches!(hero_movement_direction, HeroMovementDirection::Restart_Game) {
+            info!("Restarting game...");
+            return;
+        }
         if let Some(shoot) = shoot {
             for sh in shoots.iter_mut() {
                 if sh.is_none() {
@@ -61,11 +66,10 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
 
         // 2. Movement
-        //let mut new_shoots: Vec<Shoot> = Vec::new();
         for sh in shoots.iter_mut() {
             if let Some(shoot) = sh.as_mut() {
                 shoot.move_forward(delta_ms as u64);
-                if out_of_screen(&shoot) {
+                if out_of_screen(shoot) {
                     //remove it.
                     let _ = sh.take();
                 }
@@ -74,7 +78,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         fb.clear_screen();
         direction = move_enemies(&mut offset_y, &mut aliens, direction, delta_ms as u64);
 
-        //info!("delta_ms: {}", delta_ms);
+        info!("delta_ms: {}", delta_ms);
         hero.handle_movement(hero_movement_direction, delta_ms as u64);
 
         // 3. collision detection
@@ -106,6 +110,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
                 }
             }
         }
+        //info!("Collision detection is over");
 
         if !hero.structure.alive {
             info!("Game over!");
@@ -126,25 +131,33 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             info!("Game over, you won!");
             return;
         }
-
+        //info!("Start drawing things");
         // 4. draw things:
         for enemy in aliens.iter() {
             if enemy.structure.alive {
                 enemy.draw(fb)
             }
         }
-
+        fb.update();
+        //info!("Drawing hero..");
         hero.draw(fb);
+        //info!("drawing shoots");
         for shoot in shoots.iter_mut().flatten() {
             shoot.draw(fb);
         }
-
+        //info!("Updating fb...");
         fb.update();
+        //info!("Done updating fb");
+
+        #[cfg(feature = "std")]
         let delta_next =
             Duration::from_millis(1000 / FPS as u64).saturating_sub(time_manager.since(last_loop));
+        #[cfg(feature = "std")]
         if delta_next.as_millis() > 0 {
+            #[cfg(feature = "std")]
             std::thread::sleep(delta_next);
         }
+        //info!("End of the loop");
     }
 }
 
@@ -162,4 +175,5 @@ pub enum HeroMovementDirection {
     Left,
     Right,
     Still,
+    Restart_Game,
 }

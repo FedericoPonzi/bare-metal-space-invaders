@@ -1,7 +1,8 @@
-use crate::actor::{Actor, ActorStructure};
+use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::{
-    HeroMovementDirection, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN,
+    FrameBufferInterface, HeroMovementDirection, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH,
+    SCREEN_WIDTH_NO_MARGIN,
 };
 use core::mem;
 
@@ -20,13 +21,13 @@ const HERO_SPEED_MS: f64 = 200.0 / 1000.0; // pixels per millisecond
 pub struct Hero {
     pub(crate) structure: ActorStructure,
 }
-impl Default for Hero {
-    fn default() -> Self {
-        let hero_sprite: &[u32; SPRITE_SIZE / 4] = unsafe { mem::transmute(HERO) };
 
+impl Hero {
+    #[inline(always)]
+    pub fn new(fb: &impl FrameBufferInterface) -> Hero {
         Hero {
             structure: ActorStructure {
-                sprite: hero_sprite,
+                sprite: Sprite::new(HERO, fb),
                 width: HERO_WIDTH,
                 height: HERO_HEIGHT,
                 alive: true,
@@ -34,11 +35,7 @@ impl Default for Hero {
             },
         }
     }
-}
-impl Hero {
-    pub fn new() -> Hero {
-        Self::default()
-    }
+    #[inline(always)]
     fn move_left(&mut self, delta: u64) {
         self.structure
             .coordinates
@@ -50,6 +47,7 @@ impl Hero {
             );
     }
 
+    #[inline(always)]
     fn move_right(&mut self, delta: u64) {
         self.structure
             .coordinates
@@ -62,6 +60,7 @@ impl Hero {
         }
     }
 
+    #[inline(always)]
     pub fn handle_movement(&mut self, hero_movement_direction: HeroMovementDirection, delta: u64) {
         match hero_movement_direction {
             HeroMovementDirection::Left => {

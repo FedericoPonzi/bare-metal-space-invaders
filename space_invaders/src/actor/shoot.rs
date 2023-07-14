@@ -1,5 +1,6 @@
-use crate::actor::{Actor, ActorStructure, HERO_HEIGHT};
+use crate::actor::{Actor, ActorStructure, Sprite, HERO_HEIGHT};
 use crate::framebuffer::coordinates::Coordinates;
+use crate::FrameBufferInterface;
 use core::mem;
 use log::info;
 
@@ -14,7 +15,7 @@ const SHOOT_MOVEMENT_OFFSET: f64 = 150.0 / 1000.0;
 pub const SHOOT_SPAWN_OFFSET_Y: u32 = HERO_HEIGHT + 10;
 
 // max shots available to render at a time
-pub const SHOOT_MAX_ALLOC: usize = 30;
+pub const SHOOT_MAX_ALLOC: usize = 1;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ShootOwner {
@@ -39,11 +40,15 @@ impl Actor for Shoot {
 }
 
 impl Shoot {
-    pub fn new(coordinates: Coordinates, owner: ShootOwner) -> Self {
-        let shoot_sprite: &[u32; 5336 / 4] = unsafe { mem::transmute(SHOOT) };
+    #[inline(always)]
+    pub fn new(
+        coordinates: Coordinates,
+        owner: ShootOwner,
+        fb: &impl FrameBufferInterface,
+    ) -> Self {
         Shoot {
             structure: ActorStructure {
-                sprite: shoot_sprite,
+                sprite: Sprite::new(SHOOT, fb),
                 width: SHOOT_WIDTH,
                 height: SHOOT_HEIGHT,
                 alive: true,
@@ -53,6 +58,7 @@ impl Shoot {
         }
     }
 
+    #[inline(always)]
     pub(crate) fn move_forward(&mut self, delta: u64) {
         if self.owner == ShootOwner::Hero {
             info!(
@@ -71,6 +77,7 @@ impl Shoot {
         }
     }
 
+    #[inline(always)]
     pub fn is_hit(&self, coordinates: &Coordinates) -> bool {
         let shoot_structure = self.structure;
         let shoot_coordinates = shoot_structure.coordinates;

@@ -1,8 +1,9 @@
 use crate::uart_pl011::PL011Uart;
 use alloc::vec;
+use core::alloc::GlobalAlloc;
 use log::info;
 use space_invaders::actor::{Shoot, ShootOwner};
-use space_invaders::{Coordinates, HeroMovementDirection, Pixel};
+use space_invaders::{Coordinates, FrameBufferInterface, HeroMovementDirection, Pixel};
 
 /// RPI 3 framebuffer
 pub struct FrameBuffer {
@@ -17,11 +18,15 @@ pub struct FrameBuffer {
     pub fb_virtual_width: u32,
     /// Bits used by each pixel
     pub depth_bits: u32,
-    pub buffer: vec::Vec<u32>, //[u32; 3024],
+    //todo: using the array instead of vec breaks the system init.
+    pub buffer: vec::Vec<u32>, //[u32; FB_BUFFER_LEN],
     pub uart: PL011Uart,
 }
 
 impl space_invaders::FrameBufferInterface for FrameBuffer {
+    fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
+        unsafe { crate::allocator::ALLOCATOR.alloc(layout) }
+    }
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer
     }
@@ -42,6 +47,7 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
     fn get_input_keys(
         &self,
         hero_coordinates: &Coordinates,
+        fb: &impl FrameBufferInterface,
     ) -> (HeroMovementDirection, Option<Shoot>) {
         let mut max = 10;
         let mut hero = HeroMovementDirection::Still;
@@ -56,12 +62,16 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
                     'd' | 'D' => {
                         hero = HeroMovementDirection::Right;
                     }
+                    'r' | 'R' => {
+                        hero = HeroMovementDirection::Restart_Game;
+                    }
                     ' ' => {
                         let new_shoot = Shoot::new(
-                            Coordinates::new(hero_coordinates.x, hero_coordinates.y - 20),
+                            Coordinates::new(hero_coordinates.x(), hero_coordinates.y() - 20),
                             ShootOwner::Hero,
+                            fb,
                         );
-                        info!("pew!");
+                        //info!("pew!");
                         shoot = Some(new_shoot);
                     }
                     received => {
@@ -75,7 +85,7 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
             }
         }
 
-        info!("Hero direction: {:?},  shoot: {:?} ", hero, shoot.is_some());
+        //info!("Hero direction: {:?},  shoot: {:?} ", hero, shoot.is_some());
         (hero, shoot)
     }
 }
@@ -91,32 +101,6 @@ impl FrameBuffer {
                 0,
                 self.width as usize * self.height as usize,
             )
-        }
-    }
-    pub fn use_pixel(&mut self, pixel: Pixel) {
-        unsafe {
-            let ptr = self.lfb_ptr as *const u32 as *mut u32;
-            let x = pixel.point.x;
-            let y = pixel.point.y;
-            let to_write = pixel.color.as_brga_u32();
-            // why fb_virtualwidth? because it's the "actual" screen size.
-            // No need to use depth - It's a pointer to u32 and depth is 32 bits => 4 bytes.
-            // No need to use pitch, because I think it also refers to physical.
-            let offset = (self.fb_virtual_width * y) + x;
-            if offset < self.max_screen_size() {
-                // ptr is a pointer to u32. The add works by doing offset * size_of::<u32> = offset*4.
-                let ptr = ptr.add((offset) as usize);
-                core::ptr::write_volatile(ptr, to_write);
-            } else {
-                /*println!(
-                    "Request to write pixel: {:?}, but max screensize is :{}",
-                    pixel,
-                    self.max_screen_size()
-                );*/
-            }
-            if offset >= self.max_screen_size() {
-                //info!("Offset is >= max_screen_size, skipping.");
-            }
         }
     }
 }

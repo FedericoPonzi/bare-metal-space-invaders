@@ -18,7 +18,7 @@ const FB_PHYSICAL_WIDTH: u32 = SCREEN_WIDTH as u32;
 /// Height of the requested frame buffer
 const FB_PHYSICAL_HEIGHT: u32 = SCREEN_HEIGHT as u32;
 
-const BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH as usize;
+pub const BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH as usize;
 
 /// Set virtual (buffer) width/height
 const FB_VIRTUAL_WH_TAG: u32 = 0x00048004;
@@ -248,7 +248,7 @@ pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
             buffer: vec![0; BUFFER_LEN],
             uart: unsafe { PL011Uart::new(PL011_UART_START) },
         };
-        println!(
+        info!(
             "All good, setting up the frame buffer now: {}, height: {}, pitch: {}, depth:{}, is_rgb: {}",
             width, height, pitch, depth, is_rgb
         );

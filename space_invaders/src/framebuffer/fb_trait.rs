@@ -2,11 +2,14 @@ use crate::actor::Shoot;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Pixel;
-use crate::HeroMovementDirection;
+use crate::{HeroMovementDirection, SCREEN_WIDTH};
+use core::alloc;
+use log::info;
 
 use micromath::F32;
 
 pub trait FrameBufferInterface {
+    fn alloc(&self, layout: alloc::Layout) -> *mut u8;
     /// TODO: cleanup.
     /// Bresenham algorithm for draw line: https://gist.github.com/bert/1085538
     fn draw_line(&mut self, start: Coordinates, end: Coordinates, color: Color) {
@@ -78,7 +81,9 @@ pub trait FrameBufferInterface {
     }
 
     fn raw_buffer(&mut self) -> &mut [u32];
-    fn width(&self) -> usize;
+    fn width(&self) -> usize {
+        SCREEN_WIDTH
+    }
     fn use_pixel(&mut self, pixel: Pixel) {
         let width = self.width();
         self.raw_buffer()[width * pixel.point.y() as usize + pixel.point.x() as usize] =
@@ -87,11 +92,13 @@ pub trait FrameBufferInterface {
 
     fn display_image(&mut self, top_left: Coordinates, image: &[u32], width: u32) {
         let fb_width = self.width();
+
         for pos in 0..image.len() as u32 {
             let y = pos / width;
             let x = pos % width;
             let (x, y) = (x + top_left.x(), y + top_left.y());
-            self.raw_buffer()[fb_width * y as usize + x as usize] = image[pos as usize];
+            let index = fb_width * y as usize + x as usize;
+            self.raw_buffer()[index] = image[pos as usize];
         }
     }
     fn clear_screen(&mut self) {
@@ -107,5 +114,6 @@ pub trait FrameBufferInterface {
     fn get_input_keys(
         &self,
         hero_coordinates: &Coordinates,
+        fb: &impl FrameBufferInterface,
     ) -> (HeroMovementDirection, Option<Shoot>);
 }
