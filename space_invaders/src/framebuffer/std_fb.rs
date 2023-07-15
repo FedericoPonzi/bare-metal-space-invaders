@@ -35,6 +35,12 @@ impl FrameBufferInterface for StdFrameBuffer {
     fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
         unsafe { std::alloc::alloc(layout) }
     }
+
+    fn random(&self) -> u32 {
+        // generate a random u32
+        rand::random()
+    }
+
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer
     }

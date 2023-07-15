@@ -1,4 +1,4 @@
-use crate::actor::{Actor, ActorStructure, Sprite, HERO_HEIGHT};
+use crate::actor::{Actor, ActorStructure, Enemy, Sprite, HERO_HEIGHT};
 use crate::framebuffer::color::{SHOT_COLOR, WHITE_COLOR};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Color;
@@ -14,13 +14,29 @@ const SHOOT_SPEED: f64 = 400.0 / 1000.0;
 
 pub const SHOOT_SPAWN_OFFSET_Y: u32 = HERO_HEIGHT + 10;
 
+pub const SHOOT_ENEMY_MAX: usize = 1;
+pub const SHOOT_HERO_MAX: usize = 2;
+
 // max shots available to render at a time
-pub const SHOOT_MAX_ALLOC: usize = 2;
+pub const SHOOT_MAX_ALLOC: usize = SHOOT_ENEMY_MAX + SHOOT_HERO_MAX;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ShootOwner {
     Hero,
     Enemy,
+}
+
+impl From<&Enemy> for Shoot {
+    fn from(enemy: &Enemy) -> Self {
+        let enemy_coordinates = enemy.structure.coordinates;
+        Self {
+            owner: ShootOwner::Enemy,
+            structure: Shoot::structure(Coordinates::new(
+                enemy_coordinates.x(),
+                enemy_coordinates.y() + enemy.structure.height,
+            )),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -62,10 +78,21 @@ impl Shoot {
         }
     }
 
+    const fn structure(coordinates: Coordinates) -> ActorStructure {
+        ActorStructure {
+            sprite: None,
+            width: SHOOT_BOX_WIDTH,
+            height: SHOOT_BOX_HEIGHT,
+            alive: true,
+            coordinates,
+        }
+    }
+
     #[inline(always)]
-    pub(crate) fn out_of_screen(&self) -> bool {
+    pub(crate) fn out_of_screen(&self, screen_height: u32) -> bool {
         let coordinates = self.structure.coordinates;
         (coordinates.y() as i32) - (self.structure.height as i32) <= 0
+            || (coordinates.y() + self.structure.height) >= (screen_height)
     }
 
     #[inline(always)]

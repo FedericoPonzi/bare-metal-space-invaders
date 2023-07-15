@@ -13,7 +13,6 @@ this crate can run both with std using xx and on bare metal by implementing the 
 * r: restart game
 
 # TODO:
-* enemies should fire as well
 * Add barricades.
 * shots rate limit.
 * Add high score

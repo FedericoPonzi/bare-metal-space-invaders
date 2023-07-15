@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "no_std", feature(format_args_nl))]
 
@@ -8,7 +9,8 @@ mod time;
 
 pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{
-    EnemiesDirection, Hero, ShootOwner, ALIEN_COLS, SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
+    EnemiesDirection, Hero, ShootOwner, ALIEN_COLS, SHOOT_ENEMY_MAX, SHOOT_HERO_MAX,
+    SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
 };
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
 use core::ops::Sub;
@@ -16,6 +18,7 @@ pub use framebuffer::{Coordinates, Pixel};
 use std::time::Duration;
 
 use log::info;
+use minifb::Key::V;
 
 #[cfg(feature = "std")]
 pub use crate::time::TimeManager;
@@ -45,6 +48,9 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
 
     let mut offset_y = 0;
     let mut shoots: [Option<Shoot>; SHOOT_MAX_ALLOC] = [None; SHOOT_MAX_ALLOC];
+    let mut hero_shoots = 0;
+    let mut enemy_shoots = 0;
+
     let mut hero = Hero::new(fb);
 
     let mut direction = EnemiesDirection::Right;
@@ -53,10 +59,21 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
     let mut enemies_dead = 0;
     let mut lowest_col = (ALIEN_COLS, 0);
     let mut largest_col = (0, 0);
+    let mut random = [0; 10];
+    let mut random_index = 0;
+    for i in 0..random.len() {
+        random[i] = fb.random();
+    }
     loop {
         let now = time_manager.now();
         let delta_ms = now.sub(last_loop).as_millis() as u64;
         last_loop = now;
+        if random_index == random.len() {
+            random_index = 0;
+        }
+        let rnd = random[random_index];
+        random_index += 1;
+
         info!("delta_ms: {}", delta_ms);
 
         // 1. Get input
@@ -69,11 +86,27 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             info!("Restarting game...");
             return;
         }
-        if let Some(shoot) = shoot {
+        if hero_shoots < SHOOT_HERO_MAX && let Some(shoot) = shoot {
             for sh in shoots.iter_mut() {
                 if sh.is_none() {
                     sh.replace(shoot);
+                    hero_shoots += 1;
                     break;
+                }
+            }
+        }
+
+        if enemy_shoots < SHOOT_ENEMY_MAX {
+            let enemy_shooting = rnd as usize % (TOTAL_ENEMIES - enemies_dead as usize);
+            for (id, enemy) in aliens.iter().filter(|e| e.structure.alive).enumerate() {
+                if enemy_shooting == id {
+                    for sh in shoots.iter_mut() {
+                        if sh.is_none() {
+                            sh.replace(Shoot::from(enemy));
+                            enemy_shoots += 1;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -84,8 +117,13 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             if let Some(shoot) = sh.as_mut() {
                 info!("shoot: {:?}", shoot);
                 shoot.move_forward(delta_ms);
-                if shoot.out_of_screen() {
+                if shoot.out_of_screen(fb.height() as u32) {
                     info!("shoot is out of screen!");
+                    if shoot.owner == ShootOwner::Hero {
+                        hero_shoots -= 1;
+                    } else {
+                        enemy_shoots -= 1;
+                    }
                     //remove it.
                     let _ = sh.take();
                 }
@@ -130,6 +168,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
                         if has_hit {
                             info!("shoot has hit an enemy!");
                             sh.take();
+                            hero_shoots -= 1;
                         }
                     }
                 }
@@ -148,6 +187,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             return;
         }
 
+        // todo: check for collision with the hero for additional drama
         for enemy in aliens.iter() {
             if enemy.structure.alive
                 && enemy.structure.coordinates.y() + enemy.structure.height

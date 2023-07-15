@@ -5,7 +5,7 @@ edition = "2021"
 
 [features]
 default = ["no_std"]
-std = ["dep:minifb", "dep:env_logger"]
+std = ["dep:minifb", "dep:env_logger", "dep:rand"]
 no_std = []
 
 [dependencies]
@@ -13,6 +13,7 @@ micromath = { version = "2.0.0" }
 minifb = {version = "0.24", optional = true }
 env_logger = {version = "0.10", optional = true }
 log = "0.4.5"
+rand = {version = "0.8", optional = true}
 #embedded-time = {version = "0.12", optional = true }
 
 [[bin]]

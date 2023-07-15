@@ -21,6 +21,7 @@ pub trait FrameBufferInterface {
             }
         }
     }
+    fn random(&self) -> u32;
 
     /// [x,y] the top left center
     #[inline(always)]
