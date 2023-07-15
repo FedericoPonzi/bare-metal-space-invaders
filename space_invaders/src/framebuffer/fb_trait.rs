@@ -2,7 +2,7 @@ use crate::actor::Shoot;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Pixel;
-use crate::{HeroMovementDirection, SCREEN_WIDTH};
+use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
 use core::alloc;
 use log::info;
 
@@ -50,6 +50,9 @@ pub trait FrameBufferInterface {
     fn raw_buffer(&mut self) -> &mut [u32];
     fn width(&self) -> usize {
         SCREEN_WIDTH
+    }
+    fn height(&self) -> usize {
+        SCREEN_HEIGHT
     }
     fn use_pixel(&mut self, pixel: Pixel) {
         let width = self.width();

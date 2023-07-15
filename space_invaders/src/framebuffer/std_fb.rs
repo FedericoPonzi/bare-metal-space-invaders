@@ -71,7 +71,6 @@ impl FrameBufferInterface for StdFrameBuffer {
                             hero_coordinates.y() - SHOOT_SPAWN_OFFSET_Y,
                         ),
                         ShootOwner::Hero,
-                        fb,
                     );
                     //info!("pew!");
                     shoot = Some(new_shoot);

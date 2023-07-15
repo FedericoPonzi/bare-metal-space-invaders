@@ -1,3 +1,7 @@
 let alien_width = 46;
 let alien_height = 29;
-5336
+
+const SHOOT: &[u8; 5336] =
+    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien-1.data");
+const SHOOT_WIDTH: u32 = 46;
+const SHOOT_HEIGHT: u32 = 29;

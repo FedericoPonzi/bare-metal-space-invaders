@@ -49,7 +49,7 @@ impl Sprite {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ActorStructure {
     // TODO: can probably use RC instead
-    pub sprite: Sprite,
+    pub sprite: Option<Sprite>,
     pub width: u32,
     pub height: u32,
     pub alive: bool,
@@ -76,7 +76,7 @@ pub trait Actor {
         );*/
         fb.display_image(
             structure.coordinates,
-            structure.sprite.sprite,
+            structure.sprite.unwrap().sprite,
             structure.width,
         );
     }

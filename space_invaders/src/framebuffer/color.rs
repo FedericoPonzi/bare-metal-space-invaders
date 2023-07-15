@@ -54,3 +54,5 @@ pub const WHITE_COLOR: Color = Color {
     alpha: 255,
     brga: 0xFFFF,
 };
+
+pub const SHOT_COLOR: Color = Color::new(252, 186, 3);

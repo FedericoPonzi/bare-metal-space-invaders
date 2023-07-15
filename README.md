@@ -17,5 +17,10 @@ this crate can run both with std using xx and on bare metal by implementing the 
 * Add barricades.
 * shots rate limit.
 * Add high score
-* add alien ship.
-* add sprites graphics 
+* refactoring: framebuffer
+
+---
+maybe:
+* alien ship in foreground top of the screen
+* animations
+* 

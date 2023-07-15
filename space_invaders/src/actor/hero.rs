@@ -6,8 +6,7 @@ use crate::{
 };
 use core::mem;
 
-const SPRITE_SIZE: usize = 7200;
-const HERO: &[u8; SPRITE_SIZE] =
+const HERO: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");
 const HERO_WIDTH: u32 = 60;
 pub(crate) const HERO_HEIGHT: u32 = 29;
@@ -27,7 +26,7 @@ impl Hero {
     pub fn new(fb: &impl FrameBufferInterface) -> Hero {
         Hero {
             structure: ActorStructure {
-                sprite: Sprite::new(HERO, fb),
+                sprite: Some(Sprite::new(HERO, fb)),
                 width: HERO_WIDTH,
                 height: HERO_HEIGHT,
                 alive: true,

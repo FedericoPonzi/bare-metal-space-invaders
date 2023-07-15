@@ -4,8 +4,7 @@ use crate::{FrameBufferInterface, SCREEN_MARGIN, SCREEN_WIDTH};
 use core::mem;
 use log::info;
 
-const SPRITE_SIZE: usize = 5120;
-pub const ENEMY: &[u8; SPRITE_SIZE] =
+pub const ENEMY: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data");
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
@@ -35,7 +34,7 @@ impl Enemy {
     pub fn new(fb: &impl FrameBufferInterface) -> Self {
         Enemy {
             structure: ActorStructure {
-                sprite: Sprite::new(ENEMY, fb),
+                sprite: Some(Sprite::new(ENEMY, fb)),
                 width: ENEMY_WIDTH,
                 height: ENEMY_HEIGHT,
                 alive: true,
@@ -52,7 +51,7 @@ impl Enemy {
         self.structure.width = ENEMY_GREEN_WIDTH;
         self.structure.height = ENEMY_GREEN_HEIGHT;
 
-        self.structure.sprite = Sprite::new(ENEMY_GREEN, fb);
+        self.structure.sprite = Some(Sprite::new(ENEMY_GREEN, fb));
     }
 
     pub fn set_red_alien(&mut self, fb: &impl FrameBufferInterface) {
@@ -63,7 +62,7 @@ impl Enemy {
         self.structure.width = ENEMY_RED_WIDTH;
         self.structure.height = ENEMY_RED_HEIGHT;
 
-        self.structure.sprite = Sprite::new(ENEMY_RED, fb);
+        self.structure.sprite = Some(Sprite::new(ENEMY_RED, fb));
     }
 }
 

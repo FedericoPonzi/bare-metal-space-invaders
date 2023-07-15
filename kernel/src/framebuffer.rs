@@ -74,7 +74,6 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
                         let new_shoot = Shoot::new(
                             Coordinates::new(hero_coordinates.x(), hero_coordinates.y() - 20),
                             ShootOwner::Hero,
-                            fb,
                         );
                         //info!("pew!");
                         shoot = Some(new_shoot);
