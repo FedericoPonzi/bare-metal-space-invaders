@@ -1,8 +1,6 @@
 use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::coordinates::Coordinates;
-use crate::{FrameBufferInterface, SCREEN_MARGIN, SCREEN_WIDTH};
-use core::mem;
-use log::info;
+use crate::{FrameBufferInterface, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
 
 pub const ENEMY: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data");
@@ -18,7 +16,7 @@ pub const ALIEN_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
     - 10;
 
 /// by how many pixel should the enemy go down
-pub const ENEMY_STEP_DOWN: usize = 10; // TODO: should be calculate based on rows, screen size and alien size
+pub const ENEMY_STEP_DOWN: usize = (SCREEN_HEIGHT - SCREEN_MARGIN) / ENEMY_HEIGHT as usize;
 
 const ENEMY_SPEED_PER_MS: i32 = 20; // pixels per second
 
@@ -131,7 +129,6 @@ impl EnemiesDirection {
 /// lowest_x is the lowest x coordinate of still alive enemy
 #[inline(always)]
 pub fn move_enemies(
-    offset_y: &mut usize,
     enemy: &mut [Enemy; TOTAL_ENEMIES],
     direction: EnemiesDirection,
     delta_ms: u64,
@@ -160,16 +157,14 @@ pub fn move_enemies(
 
     let left_limit = direction == EnemiesDirection::Left
         && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN as u32;
-
     if left_limit || right_limit {
         // move down one row, invert direction
-        *offset_y += ENEMY_STEP_DOWN;
         for x in 0..ALIEN_COLS {
             for y in 0..ALIEN_ROWS {
                 let index = (y * ALIEN_COLS + x) as usize;
                 let mut enemy = &mut enemy[index];
 
-                let new_y = enemy.structure.coordinates.y() + *offset_y as u32;
+                let new_y = enemy.structure.coordinates.y() + ENEMY_STEP_DOWN as u32;
                 if enemy.structure.alive {
                     enemy.move_to(Coordinates::new(enemy.structure.coordinates.x(), new_y));
                 }

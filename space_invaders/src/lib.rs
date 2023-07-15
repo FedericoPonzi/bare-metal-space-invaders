@@ -31,7 +31,7 @@ pub use framebuffer::StdFrameBuffer;
 pub const SCREEN_WIDTH: usize = 1280;
 pub const SCREEN_WIDTH_NO_MARGIN: usize = SCREEN_WIDTH - SCREEN_MARGIN;
 pub const SCREEN_HEIGHT: usize = 720;
-pub const SCREEN_MARGIN: usize = 30;
+pub const SCREEN_MARGIN: usize = 20;
 // todo: in STD, if FPS is very low (i.e. no sleep at the end of the loop) enemies are stopped
 // because the speedup rounds to 0.
 const FPS: u128 = 15;
@@ -46,7 +46,6 @@ pub fn run_game(mut fb: impl FrameBufferInterface, time_manager: impl TimeManage
 fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManagerInterface) {
     let mut aliens = init_enemies(fb);
 
-    let mut offset_y = 0;
     let mut shoots: [Option<Shoot>; SHOOT_MAX_ALLOC] = [None; SHOOT_MAX_ALLOC];
     let mut hero_shoots = 0;
     let mut enemy_shoots = 0;
@@ -78,10 +77,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
 
         // 1. Get input
         let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates, fb);
-        info!(
-            "hero_movement_direction: {:?}, shoot: {:?}",
-            hero_movement_direction, shoot
-        );
+
         if matches!(hero_movement_direction, HeroMovementDirection::RestartGame) {
             info!("Restarting game...");
             return;
@@ -112,10 +108,8 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
 
         // 2. Movement
-        info!("Shoots: {:?}", shoots);
         for sh in shoots.iter_mut() {
             if let Some(shoot) = sh.as_mut() {
-                info!("shoot: {:?}", shoot);
                 shoot.move_forward(delta_ms);
                 if shoot.out_of_screen(fb.height() as u32) {
                     info!("shoot is out of screen!");
@@ -131,7 +125,6 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
 
         direction = move_enemies(
-            &mut offset_y,
             &mut aliens,
             direction,
             delta_ms,
@@ -187,7 +180,6 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             return;
         }
 
-        // todo: check for collision with the hero for additional drama
         for enemy in aliens.iter() {
             if enemy.structure.alive
                 && enemy.structure.coordinates.y() + enemy.structure.height

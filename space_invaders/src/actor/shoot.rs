@@ -56,8 +56,8 @@ impl Actor for Shoot {
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         fb.draw_rect_fill(
             self.structure.coordinates,
-            SHOOT_BOX_WIDTH,
-            SHOOT_BOX_HEIGHT,
+            self.structure.width,
+            self.structure.height,
             SHOOT_BOX_COLOR,
         );
     }
@@ -67,13 +67,7 @@ impl Shoot {
     #[inline(always)]
     pub fn new(coordinates: Coordinates, owner: ShootOwner) -> Self {
         Shoot {
-            structure: ActorStructure {
-                sprite: None,
-                width: SHOOT_BOX_WIDTH,
-                height: SHOOT_BOX_HEIGHT,
-                alive: true,
-                coordinates,
-            },
+            structure: Self::structure(coordinates),
             owner,
         }
     }
@@ -106,54 +100,4 @@ impl Shoot {
             }
         }
     }
-
-    #[inline(always)]
-    pub fn is_hit<T: Actor>(&self, actor: &T) -> bool {
-        let shoot_structure = self.structure;
-        let shoot_coordinates = self.structure.coordinates;
-        let actor_structure = actor.get_structure();
-        let actor_coordinates = actor_structure.coordinates;
-
-        let shoot_x = shoot_coordinates.x();
-        let shoot_y = shoot_coordinates.y();
-        let x = actor_coordinates.x();
-        let y = actor_coordinates.y();
-
-        let shoot_x_end = shoot_x + shoot_structure.width;
-        let shoot_y_end = shoot_y + shoot_structure.height;
-        let x_end = x + actor_structure.width;
-        let y_end = y + actor_structure.height;
-
-        x <= shoot_x_end && shoot_x <= x_end && y <= shoot_y_end && shoot_y <= y_end
-            || x <= shoot_x_end && shoot_x <= x_end && y_end <= shoot_y_end && shoot_y <= y
-            || x <= shoot_x_end && y <= shoot_y_end && shoot_y <= y && shoot_x <= x
-            || x <= shoot_x_end && y_end <= shoot_y_end && shoot_y <= y && shoot_x <= x
-            || y <= shoot_y_end && shoot_y <= y && x_end <= shoot_x_end && shoot_x <= x
-            || y_end <= shoot_y_end && shoot_y <= y && x_end <= shoot_x_end && shoot_x <= x
-    }
 }
-
-/*
-#[cfg(test)]
-mod test {
-    #[macro_use]
-    extern crate std;
-
-    use crate::actor::{ActorStructure, Shoot, ShootOwner};
-
-    #[test]
-    pub fn test_hit() {
-        let shoot = Shoot {
-            structure: ActorStructure {
-                sprite: &[0; 4],
-                width: 1,
-                height: 1,
-                alive: true,
-                coordinates: super::Coordinates { x: 0, y: 0 },
-            },
-            owner: ShootOwner::Hero,
-        };
-        let coordinates = super::Coordinates { x: 0, y: 0 };
-        assert!(shoot.is_hit(&coordinates));
-    }
-}*/

@@ -6,8 +6,6 @@ use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
 use core::alloc;
 use log::info;
 
-use micromath::F32;
-
 pub trait FrameBufferInterface {
     fn alloc(&self, layout: alloc::Layout) -> *mut u8;
 
