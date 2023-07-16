@@ -5,8 +5,8 @@ use crate::framebuffer::Color;
 use crate::FrameBufferInterface;
 use log::info;
 
-const SHOOT_BOX_WIDTH: u32 = 3;
-const SHOOT_BOX_HEIGHT: u32 = 7;
+pub const SHOOT_BOX_WIDTH: u32 = 3;
+pub const SHOOT_BOX_HEIGHT: u32 = 7;
 const SHOOT_BOX_COLOR: Color = SHOT_COLOR;
 
 // pixels per millisecond.
@@ -14,8 +14,8 @@ const SHOOT_SPEED: f64 = 400.0 / 1000.0;
 
 pub const SHOOT_SPAWN_OFFSET_Y: u32 = HERO_HEIGHT + 10;
 
-pub const SHOOT_ENEMY_MAX: usize = 1;
-pub const SHOOT_HERO_MAX: usize = 2;
+pub const SHOOT_ENEMY_MAX: usize = 3;
+pub const SHOOT_HERO_MAX: usize = 4;
 
 // max shots available to render at a time
 pub const SHOOT_MAX_ALLOC: usize = SHOOT_ENEMY_MAX + SHOOT_HERO_MAX;

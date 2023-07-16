@@ -1,6 +1,7 @@
-use crate::actor::{Shoot, ShootOwner, SHOOT_SPAWN_OFFSET_Y};
+use crate::actor::{Shoot, ShootOwner, HERO_WIDTH, SHOOT_SPAWN_OFFSET_Y};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
+use crate::framebuffer::Color;
 use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
 use log::info;
 use minifb::{Key, Window, WindowOptions};
@@ -26,6 +27,7 @@ impl StdFrameBuffer {
 
         // Limit to max ~60 fps update rate
         window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+        window.set_title("BareMetal Space Invaders");
 
         StdFrameBuffer { window, buffer }
     }
@@ -35,6 +37,8 @@ impl FrameBufferInterface for StdFrameBuffer {
     fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
         unsafe { std::alloc::alloc(layout) }
     }
+
+    //fn write_char(&mut self, c: char, coordinates: Coordinates, color: Color) {}
 
     fn random(&self) -> u32 {
         // generate a random u32
@@ -58,7 +62,6 @@ impl FrameBufferInterface for StdFrameBuffer {
     fn get_input_keys(
         &self,
         hero_coordinates: &Coordinates,
-        fb: &impl FrameBufferInterface,
     ) -> (HeroMovementDirection, Option<Shoot>) {
         let mut hero_movement_direction = HeroMovementDirection::Still;
         let mut shoot = None;
@@ -73,8 +76,8 @@ impl FrameBufferInterface for StdFrameBuffer {
                 Key::Space => {
                     let new_shoot = Shoot::new(
                         Coordinates::new(
-                            hero_coordinates.x(),
-                            hero_coordinates.y() - SHOOT_SPAWN_OFFSET_Y,
+                            hero_coordinates.x() + HERO_WIDTH / 2,
+                            hero_coordinates.y() - 10,
                         ),
                         ShootOwner::Hero,
                     );

@@ -3,9 +3,11 @@ mod enemy;
 mod hero;
 mod shoot;
 
+pub use barricade::*;
 pub use enemy::*;
 pub use hero::*;
 pub use shoot::*;
+use std::slice::IterMut;
 
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
@@ -69,12 +71,9 @@ pub trait Actor {
 
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         let structure = self.get_structure();
-        /*fb.draw_rect_fill(
-            structure.coordinates,
-            structure.width,
-            structure.height,
-            WHITE_COLOR,
-        );*/
+        if !structure.alive {
+            return;
+        }
         fb.display_image(
             structure.coordinates,
             structure.sprite.unwrap().sprite,
@@ -83,10 +82,10 @@ pub trait Actor {
     }
 
     #[inline(always)]
-    fn is_hit<T: Actor>(&self, actor: &T) -> bool {
+    fn is_hit(&self, actor_structure: &ActorStructure) -> bool {
         let self_structure = self.get_structure();
         let self_coordinates = self_structure.coordinates;
-        let actor_structure = actor.get_structure();
+        let actor_structure = actor_structure;
         let actor_coordinates = actor_structure.coordinates;
 
         let self_x = self_coordinates.x();

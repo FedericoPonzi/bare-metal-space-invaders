@@ -8,11 +8,11 @@ use core::mem;
 
 const HERO: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");
-const HERO_WIDTH: u32 = 60;
+pub const HERO_WIDTH: u32 = 60;
 pub(crate) const HERO_HEIGHT: u32 = 29;
 
-const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) as u32 - HERO_WIDTH;
-const HERO_SPAWN_Y: u32 = (SCREEN_HEIGHT - SCREEN_MARGIN - HERO_HEIGHT as usize) as u32;
+pub const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) as u32 - HERO_WIDTH;
+pub const HERO_SPAWN_Y: u32 = (SCREEN_HEIGHT - SCREEN_MARGIN - HERO_HEIGHT as usize) as u32;
 
 const HERO_SPEED_MS: f64 = 200.0 / 1000.0; // pixels per millisecond
 

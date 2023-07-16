@@ -10,17 +10,17 @@ const ENEMY_HEIGHT: u32 = 32;
 const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 15;
 const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL: u32 = 15;
 
-const ALIEN_ROWS: u32 = 4;
-pub const ALIEN_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
+const ENEMY_ROWS: u32 = 4;
+pub const ENEMY_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
     / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW))
     - 10;
 
 /// by how many pixel should the enemy go down
 pub const ENEMY_STEP_DOWN: usize = (SCREEN_HEIGHT - SCREEN_MARGIN) / ENEMY_HEIGHT as usize;
 
-const ENEMY_SPEED_PER_MS: i32 = 20; // pixels per second
+const ENEMY_SPEED_PER_MS: i32 = 25; // pixels per second
 
-pub const TOTAL_ENEMIES: usize = (ALIEN_ROWS * ALIEN_COLS) as usize;
+pub const TOTAL_ENEMIES: usize = (ENEMY_ROWS * ENEMY_COLS) as usize;
 
 #[derive(Copy, Clone)]
 pub struct Enemy {
@@ -79,22 +79,22 @@ impl Actor for Enemy {
 pub fn init_enemies(fb: &impl FrameBufferInterface) -> [Enemy; TOTAL_ENEMIES] {
     let mut enemies = [Enemy::new(fb); TOTAL_ENEMIES];
 
-    for x in 0..ALIEN_COLS {
+    for x in 0..ENEMY_COLS {
         let offset_x =
             SCREEN_MARGIN as u32 + ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
 
-        for y in 0..ALIEN_ROWS {
+        for y in 0..ENEMY_ROWS {
             let offset_y =
                 (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y + SCREEN_MARGIN as u32;
 
-            enemies[(y * ALIEN_COLS + x) as usize].structure.coordinates =
+            enemies[(y * ENEMY_COLS + x) as usize].structure.coordinates =
                 Coordinates::new(offset_x, offset_y);
 
             if y == 1 {
-                enemies[(y * ALIEN_COLS + x) as usize].set_green_alien(fb);
+                enemies[(y * ENEMY_COLS + x) as usize].set_green_alien(fb);
             }
             if y >= 2 {
-                enemies[(y * ALIEN_COLS + x) as usize].set_red_alien(fb);
+                enemies[(y * ENEMY_COLS + x) as usize].set_red_alien(fb);
             }
         }
     }
@@ -146,22 +146,22 @@ pub fn move_enemies(
         -speedup
     };
 
-    let lowest_enemy = enemy[(lowest_col.1 * ALIEN_COLS + lowest_col.0) as usize];
-    let largest_enemy = enemy[(largest_col.1 * ALIEN_COLS + largest_col.0) as usize];
+    let lowest_enemy = enemy[(lowest_col.1 * ENEMY_COLS + lowest_col.0) as usize];
+    let largest_enemy = enemy[(largest_col.1 * ENEMY_COLS + largest_col.0) as usize];
     let right_limit = direction == EnemiesDirection::Right
         && largest_enemy.structure.coordinates.x() + ENEMY_WIDTH
             >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
 
-    *lowest_col = (ALIEN_COLS, 0);
+    *lowest_col = (ENEMY_COLS, 0);
     *largest_col = (0, 0);
 
     let left_limit = direction == EnemiesDirection::Left
         && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN as u32;
     if left_limit || right_limit {
         // move down one row, invert direction
-        for x in 0..ALIEN_COLS {
-            for y in 0..ALIEN_ROWS {
-                let index = (y * ALIEN_COLS + x) as usize;
+        for x in 0..ENEMY_COLS {
+            for y in 0..ENEMY_ROWS {
+                let index = (y * ENEMY_COLS + x) as usize;
                 let mut enemy = &mut enemy[index];
 
                 let new_y = enemy.structure.coordinates.y() + ENEMY_STEP_DOWN as u32;
@@ -181,9 +181,9 @@ pub fn move_enemies(
 
     let offset_x = direction.to_offset(delta_ms, speedup);
 
-    for x in 0..ALIEN_COLS {
-        for y in 0..ALIEN_ROWS {
-            let index = (y * ALIEN_COLS + x) as usize;
+    for x in 0..ENEMY_COLS {
+        for y in 0..ENEMY_ROWS {
+            let index = (y * ENEMY_COLS + x) as usize;
             let enemey = &mut enemy[index];
             if !enemey.structure.alive {
                 continue;

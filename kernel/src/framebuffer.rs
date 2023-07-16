@@ -52,7 +52,6 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
     fn get_input_keys(
         &self,
         hero_coordinates: &Coordinates,
-        fb: &impl FrameBufferInterface,
     ) -> (HeroMovementDirection, Option<Shoot>) {
         let mut max = 10;
         let mut hero = HeroMovementDirection::Still;

@@ -9,8 +9,8 @@ mod time;
 
 pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{
-    EnemiesDirection, Hero, ShootOwner, ALIEN_COLS, SHOOT_ENEMY_MAX, SHOOT_HERO_MAX,
-    SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
+    Barricade, EnemiesDirection, Hero, ShootOwner, ENEMY_COLS, HERO_SPAWN_X, HERO_SPAWN_Y,
+    SHOOT_ENEMY_MAX, SHOOT_HERO_MAX, SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
 };
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
 use core::ops::Sub;
@@ -18,7 +18,6 @@ pub use framebuffer::{Coordinates, Pixel};
 use std::time::Duration;
 
 use log::info;
-use minifb::Key::V;
 
 #[cfg(feature = "std")]
 pub use crate::time::TimeManager;
@@ -44,8 +43,9 @@ pub fn run_game(mut fb: impl FrameBufferInterface, time_manager: impl TimeManage
 }
 
 fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManagerInterface) {
-    let mut aliens = init_enemies(fb);
+    let mut enemies = init_enemies(fb);
 
+    // todo, instead of using option just set alive: false,
     let mut shoots: [Option<Shoot>; SHOOT_MAX_ALLOC] = [None; SHOOT_MAX_ALLOC];
     let mut hero_shoots = 0;
     let mut enemy_shoots = 0;
@@ -56,13 +56,17 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
     let mut last_loop = time_manager.now();
     // used for speedup calculation.
     let mut enemies_dead = 0;
-    let mut lowest_col = (ALIEN_COLS, 0);
+    let mut lowest_col = (ENEMY_COLS, 0);
     let mut largest_col = (0, 0);
     let mut random = [0; 10];
     let mut random_index = 0;
     for i in 0..random.len() {
         random[i] = fb.random();
     }
+
+    let mut barricades = Barricade::create_barricades();
+    let mut barricades_alive = barricades.len();
+
     loop {
         let now = time_manager.now();
         let delta_ms = now.sub(last_loop).as_millis() as u64;
@@ -76,7 +80,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         info!("delta_ms: {}", delta_ms);
 
         // 1. Get input
-        let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates, fb);
+        let (hero_movement_direction, shoot) = fb.get_input_keys(&hero.structure.coordinates);
 
         if matches!(hero_movement_direction, HeroMovementDirection::RestartGame) {
             info!("Restarting game...");
@@ -93,8 +97,8 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
 
         if enemy_shoots < SHOOT_ENEMY_MAX {
-            let enemy_shooting = rnd as usize % (TOTAL_ENEMIES - enemies_dead as usize);
-            for (id, enemy) in aliens.iter().filter(|e| e.structure.alive).enumerate() {
+            let enemy_shooting = rnd as usize % (TOTAL_ENEMIES - enemies_dead);
+            for (id, enemy) in enemies.iter().filter(|e| e.structure.alive).enumerate() {
                 if enemy_shooting == id {
                     for sh in shoots.iter_mut() {
                         if sh.is_none() {
@@ -125,7 +129,7 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         }
 
         direction = move_enemies(
-            &mut aliens,
+            &mut enemies,
             direction,
             delta_ms,
             &mut lowest_col,
@@ -136,32 +140,48 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
         hero.handle_movement(hero_movement_direction, delta_ms);
 
         // 3. collision detection
+        // this is not the best way to do it, but it works.
+        // The issue here is that if the loop runs really slowly, then the shoot will overlap
+        // with the enemies in very few positions. OFC, if the game is running with so few fps,
+        // it would be unplayable anyway.
 
         for sh in shoots.iter_mut() {
             if let Some(shoot) = sh {
                 match shoot.owner {
                     ShootOwner::Enemy => {
-                        if shoot.is_hit(&hero) {
+                        if shoot.is_hit(hero.get_structure()) {
                             let _ = sh.take();
                             info!("Hero is dead!");
                             hero.structure.alive = false;
+                            continue;
                         }
-                    }
-                    ShootOwner::Hero => {
-                        let mut has_hit = false;
-                        for alien in aliens.iter_mut().filter(|a| a.structure.alive) {
-                            if shoot.is_hit(alien) {
-                                alien.structure.alive = false;
-                                info!("Alien is dead!");
-                                has_hit = true;
-                                enemies_dead += 1;
+                        for b in barricades.iter_mut().filter(|ba| ba.structure.alive) {
+                            if shoot.is_hit(b.get_structure()) {
+                                let _ = sh.take();
+                                info!("barricade hit!");
+                                b.structure.alive = false;
+                                barricades_alive -= 1;
+                                enemy_shoots -= 1;
                                 break;
                             }
                         }
-                        if has_hit {
-                            info!("shoot has hit an enemy!");
-                            sh.take();
-                            hero_shoots -= 1;
+                    }
+                    ShootOwner::Hero => {
+                        for (actor, is_enemy) in enemies
+                            .iter_mut()
+                            .map(|e| (&mut e.structure, 1))
+                            .chain(barricades.iter_mut().map(|e| (&mut e.structure, 0)))
+                            .filter(|a| a.0.alive)
+                        {
+                            if shoot.is_hit(actor) {
+                                actor.alive = false;
+                                info!("Alien is dead!");
+                                enemies_dead += is_enemy;
+                                barricades_alive -= if is_enemy == 0 { 1 } else { 0 };
+                                sh.take();
+                                hero_shoots -= 1;
+                                break;
+                            }
                         }
                     }
                 }
@@ -170,38 +190,49 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
 
         // check if game is over.
         if !hero.structure.alive {
-            info!("Game over, you lost!");
+            info!("Game over, you lost! Hero is dead");
             return;
         }
 
         let all_aliens_dead = TOTAL_ENEMIES - enemies_dead == 0;
         if all_aliens_dead {
-            info!("Game over, you won!");
+            info!("Game over, you won! All enemies dead.",);
             return;
         }
 
-        for enemy in aliens.iter() {
-            if enemy.structure.alive
-                && enemy.structure.coordinates.y() + enemy.structure.height
-                    >= hero.structure.coordinates.y()
-            {
-                info!("Game over, you lost!");
+        for enemy in enemies.iter() {
+            if !enemy.structure.alive {
+                continue;
+            }
+            let reached_hero = enemy.structure.coordinates.y() + enemy.structure.height
+                >= hero.structure.coordinates.y();
+            if reached_hero {
+                info!("Game over, you lost! Enemy has reached the hero");
                 return;
+            }
+            let reached_barricades = enemy.structure.coordinates.y() + enemy.structure.height
+                >= barricades[0].structure.coordinates.y();
+            if reached_barricades && barricades_alive > 0 {
+                for b in barricades.iter_mut() {
+                    b.structure.alive = false;
+                }
             }
         }
 
         // 4. draw things:
         fb.clear_screen();
 
-        for enemy in aliens.iter() {
-            if enemy.structure.alive {
-                enemy.draw(fb)
-            }
+        for enemy in enemies.iter() {
+            enemy.draw(fb)
         }
 
         hero.draw(fb);
         for shoot in shoots.iter_mut().flatten() {
             shoot.draw(fb);
+        }
+
+        for b in barricades.iter() {
+            b.draw(fb);
         }
 
         info!("Updating fb...");

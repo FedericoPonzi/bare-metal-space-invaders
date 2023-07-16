@@ -5,6 +5,7 @@ use crate::framebuffer::Pixel;
 use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
 use core::alloc;
 use log::info;
+use std::fmt::Write;
 
 pub trait FrameBufferInterface {
     fn alloc(&self, layout: alloc::Layout) -> *mut u8;
@@ -17,6 +18,30 @@ pub trait FrameBufferInterface {
                     color,
                 ));
             }
+        }
+    }
+
+    //TODO: fn write_char(&mut self, c: char, coordinates: Coordinates, color: Color);
+
+    fn write_ui(&mut self, coordinates: Coordinates, text: &str, color: Color) {
+        let mut x = coordinates.x();
+        let mut y = coordinates.y();
+        for c in text.chars() {
+            if c == '\n' {
+                y += 1;
+                x = coordinates.x();
+                continue;
+            }
+            self.use_pixel(Pixel::new(Coordinates::new(x, y), color));
+            x += 1;
+            if x >= SCREEN_WIDTH as u32 {
+                x = coordinates.x();
+                y += 1;
+                if y >= SCREEN_HEIGHT as u32 {
+                    break;
+                }
+            }
+            //self.write_char(c, Coordinates::new(x, y), color);
         }
     }
     fn random(&self) -> u32;
@@ -83,6 +108,5 @@ pub trait FrameBufferInterface {
     fn get_input_keys(
         &self,
         hero_coordinates: &Coordinates,
-        fb: &impl FrameBufferInterface,
     ) -> (HeroMovementDirection, Option<Shoot>);
 }
