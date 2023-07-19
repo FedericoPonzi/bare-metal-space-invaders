@@ -64,7 +64,6 @@ unsafe fn kernel_init() -> ! {
     let heap_end = 1 << 29; // 1 GB by default;
     info!("heap_end: {}", heap_end);
     let heap_size = heap_end - heap_start;
-
     info!("Allocator initiated");
 
     main();

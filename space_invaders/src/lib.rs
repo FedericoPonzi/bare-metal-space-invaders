@@ -1,6 +1,7 @@
 #![feature(let_chains)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "no_std", feature(format_args_nl))]
+#![warn(clippy::pedantic)]
 
 pub mod actor;
 mod framebuffer;
@@ -9,8 +10,8 @@ mod time;
 
 pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{
-    Barricade, EnemiesDirection, Hero, ShootOwner, ENEMY_COLS, HERO_SPAWN_X, HERO_SPAWN_Y,
-    SHOOT_ENEMY_MAX, SHOOT_HERO_MAX, SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
+    Barricade, EnemiesDirection, Hero, ShootOwner, ENEMY_COLS, SHOOT_ENEMY_MAX, SHOOT_HERO_MAX,
+    SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
 };
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
 use core::ops::Sub;

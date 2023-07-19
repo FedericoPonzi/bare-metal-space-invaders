@@ -162,7 +162,7 @@ pub fn move_enemies(
         for x in 0..ENEMY_COLS {
             for y in 0..ENEMY_ROWS {
                 let index = (y * ENEMY_COLS + x) as usize;
-                let mut enemy = &mut enemy[index];
+                let enemy = &mut enemy[index];
 
                 let new_y = enemy.structure.coordinates.y() + ENEMY_STEP_DOWN as u32;
                 if enemy.structure.alive {

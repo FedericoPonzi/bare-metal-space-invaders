@@ -7,7 +7,6 @@ pub use barricade::*;
 pub use enemy::*;
 pub use hero::*;
 pub use shoot::*;
-use std::slice::IterMut;
 
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
@@ -30,10 +29,11 @@ impl Sprite {
         let new_data_ptr = {
             let layout = core::alloc::Layout::from_size_align(new_size, alignment)
                 .expect("Failed to create layout");
-            let new_data_ptr = unsafe { fb.alloc(layout) } as *mut u8;
-            if new_data_ptr.is_null() {
-                panic!("Failed to allocate memory with the desired alignment");
-            }
+            let new_data_ptr = fb.alloc(layout);
+            assert!(
+                !new_data_ptr.is_null(),
+                "Failed to allocate memory with the desired alignment"
+            );
             new_data_ptr
         };
 

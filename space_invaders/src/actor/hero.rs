@@ -4,7 +4,6 @@ use crate::{
     FrameBufferInterface, HeroMovementDirection, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH,
     SCREEN_WIDTH_NO_MARGIN,
 };
-use core::mem;
 
 const HERO: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");

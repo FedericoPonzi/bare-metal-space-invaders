@@ -1,9 +1,7 @@
-use crate::actor::{Shoot, ShootOwner, HERO_WIDTH, SHOOT_SPAWN_OFFSET_Y};
+use crate::actor::{Shoot, ShootOwner, HERO_WIDTH};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::framebuffer::Color;
 use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
-use log::info;
 use minifb::{Key, Window, WindowOptions};
 use std::vec;
 

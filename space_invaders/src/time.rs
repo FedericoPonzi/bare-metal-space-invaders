@@ -17,8 +17,7 @@ pub use std_time::*;
 #[cfg(feature = "std")]
 mod std_time {
     use crate::TimeManagerInterface;
-    use std::ops::Sub;
-    use std::time::{Duration, Instant, SystemTime};
+    use std::time::{Duration, SystemTime};
 
     pub struct TimeManager;
 

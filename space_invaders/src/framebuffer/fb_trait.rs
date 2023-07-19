@@ -4,8 +4,6 @@ use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Pixel;
 use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
 use core::alloc;
-use log::info;
-use std::fmt::Write;
 
 pub trait FrameBufferInterface {
     fn alloc(&self, layout: alloc::Layout) -> *mut u8;

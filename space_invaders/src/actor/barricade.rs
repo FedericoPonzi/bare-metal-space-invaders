@@ -1,12 +1,10 @@
 use crate::actor::{
-    ActorStructure, HERO_SPAWN_X, HERO_SPAWN_Y, SHOOT_BOX_HEIGHT, SHOOT_BOX_WIDTH,
-    SHOOT_SPAWN_OFFSET_Y,
+    ActorStructure, HERO_SPAWN_Y, SHOOT_BOX_HEIGHT, SHOOT_BOX_WIDTH, SHOOT_SPAWN_OFFSET_Y,
 };
 use crate::framebuffer::color::SHOT_COLOR;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Color;
 use crate::{Actor, FrameBufferInterface, SCREEN_MARGIN, SCREEN_WIDTH};
-use log::info;
 
 const BARRICADE_BOX_WIDTH: u32 = SHOOT_BOX_WIDTH + 10;
 const BARRICADE_BOX_HEIGHT: u32 = SHOOT_BOX_HEIGHT + 10;

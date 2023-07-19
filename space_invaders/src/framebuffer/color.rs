@@ -3,7 +3,6 @@ pub struct Color {
     red: u8,
     green: u8,
     blue: u8,
-    alpha: u8,
     brga: u32,
 }
 
@@ -11,7 +10,6 @@ impl From<u32> for Color {
     #[inline(always)]
     fn from(brga: u32) -> Self {
         Self {
-            alpha: 0,
             red: 0,
             green: 0,
             blue: 0,
@@ -29,7 +27,6 @@ impl Color {
             red,
             green,
             blue,
-            alpha,
             brga: Self::brga_u32(alpha, red, green, blue),
         }
     }
@@ -45,14 +42,8 @@ impl Color {
     }
 }
 
-pub const BLACK_COLOR: Color = Color::new(0, 0, 0);
+// pub const BLACK_COLOR: Color = Color::new(0, 0, 0);
 
-pub const WHITE_COLOR: Color = Color {
-    red: 255,
-    green: 255,
-    blue: 255,
-    alpha: 255,
-    brga: 0xFFFF,
-};
+// pub const WHITE_COLOR: Color = Color::new(255, 255, 255);
 
 pub const SHOT_COLOR: Color = Color::new(252, 186, 3);

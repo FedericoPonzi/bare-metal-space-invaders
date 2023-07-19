@@ -29,6 +29,11 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
     fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         unsafe { crate::allocator::ALLOCATOR.alloc(layout) }
     }
+
+    fn random(&self) -> u32 {
+        44
+    }
+
     #[inline(always)]
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer

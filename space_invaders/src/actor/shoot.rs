@@ -1,9 +1,8 @@
-use crate::actor::{Actor, ActorStructure, Enemy, Sprite, HERO_HEIGHT};
-use crate::framebuffer::color::{SHOT_COLOR, WHITE_COLOR};
+use crate::actor::{Actor, ActorStructure, Enemy, HERO_HEIGHT};
+use crate::framebuffer::color::SHOT_COLOR;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Color;
 use crate::FrameBufferInterface;
-use log::info;
 
 pub const SHOOT_BOX_WIDTH: u32 = 3;
 pub const SHOOT_BOX_HEIGHT: u32 = 7;
