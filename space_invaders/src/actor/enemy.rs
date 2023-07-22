@@ -19,7 +19,7 @@ pub const ENEMY_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
 /// by how many pixel should the enemy go down
 pub const ENEMY_STEP_DOWN: usize = (SCREEN_HEIGHT - SCREEN_MARGIN) / ENEMY_HEIGHT as usize;
 
-const ENEMY_SPEED_PER_MS: i32 = 25; // pixels per second
+const ENEMY_SPEED_PER_MS: i32 = 20; // pixels per second
 
 pub const TOTAL_ENEMIES: usize = (ENEMY_ROWS * ENEMY_COLS) as usize;
 

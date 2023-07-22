@@ -1,7 +1,7 @@
 use crate::actor::{Actor, Barricade, Enemies, Hero, Shoots, TOTAL_ENEMIES};
 use crate::framebuffer::fb_trait::{FrameBufferInterface, UI_SCORE_COLOR, UI_SCORE_COORDINATES};
 use crate::EndOfGame::{Lost, Restarted, Won};
-use crate::{EndOfGame, MemoryAllocator, TimeManagerInterface, FPS};
+use crate::{EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput, FPS};
 use core::cmp;
 use core::ops::Sub;
 use core::time::Duration;
@@ -9,7 +9,7 @@ use log::info;
 
 pub struct GameContext<'a, T, F>
 where
-    F: FrameBufferInterface + MemoryAllocator, //+ UserInput,
+    F: FrameBufferInterface + MemoryAllocator + UserInput,
     T: TimeManagerInterface,
     // F: FrameBufferInterface,
     // A: MemoryAllocator,
@@ -33,7 +33,7 @@ where
 
 impl<'a, T, F> GameContext<'a, T, F>
 where
-    F: FrameBufferInterface + MemoryAllocator, //+ UserInput,
+    F: FrameBufferInterface + MemoryAllocator + UserInput,
     T: TimeManagerInterface,
 {
     pub fn new(fb: &'a mut F, high_score: u32, current_score: u32, time_manager: &'a T) -> Self {

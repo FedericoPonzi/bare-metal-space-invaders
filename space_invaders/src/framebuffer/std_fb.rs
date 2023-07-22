@@ -2,7 +2,7 @@ use crate::actor::{Shoot, ShootOwner, HERO_WIDTH};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::game_context::HeroMovementDirection;
-use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::{KeyPressedKeys, MemoryAllocator, UserInput, SCREEN_HEIGHT, SCREEN_WIDTH};
 use core::alloc::Layout;
 use log::info;
 use minifb::{Key, Window, WindowOptions};
@@ -15,6 +15,19 @@ pub struct StdFrameBuffer {
 impl MemoryAllocator for StdFrameBuffer {
     fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         unsafe { std::alloc::alloc(layout) }
+    }
+}
+impl UserInput for StdFrameBuffer {
+    fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys> {
+        self.window
+            .get_keys()
+            .into_iter()
+            .filter_map(|key| match key {
+                Key::A | Key::Left => Some(KeyPressedKeys::Left),
+                Key::D | Key::Right => Some(KeyPressedKeys::Right),
+                Key::Space => Some(KeyPressedKeys::Shoot),
+                _ => None,
+            })
     }
 }
 impl StdFrameBuffer {
@@ -39,13 +52,6 @@ impl StdFrameBuffer {
 }
 
 impl FrameBufferInterface for StdFrameBuffer {
-    //fn write_char(&mut self, c: char, coordinates: Coordinates, color: Color) {}
-
-    fn random(&self) -> u32 {
-        // generate a random u32
-        rand::random()
-    }
-
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer
     }
@@ -58,38 +64,5 @@ impl FrameBufferInterface for StdFrameBuffer {
         self.window
             .update_with_buffer(&self.buffer, SCREEN_WIDTH, SCREEN_HEIGHT)
             .unwrap();
-    }
-
-    fn get_input_keys(
-        &self,
-        hero_coordinates: &Coordinates,
-    ) -> (HeroMovementDirection, Option<Shoot>) {
-        let mut hero_movement_direction = HeroMovementDirection::Still;
-        let mut shoot = None;
-        for key in self.window.get_keys() {
-            match key {
-                Key::A | Key::Left => {
-                    hero_movement_direction = HeroMovementDirection::Left;
-                }
-                Key::D | Key::Right => {
-                    hero_movement_direction = HeroMovementDirection::Right;
-                }
-                Key::Space => {
-                    let new_shoot = Shoot::new(
-                        Coordinates::new(
-                            hero_coordinates.x() + HERO_WIDTH / 2,
-                            hero_coordinates.y() - 10,
-                        ),
-                        ShootOwner::Hero,
-                    );
-                    info!("pew!");
-                    shoot = Some(new_shoot);
-                }
-                _ => {
-                    hero_movement_direction = HeroMovementDirection::Still;
-                }
-            }
-        }
-        (hero_movement_direction, shoot)
     }
 }

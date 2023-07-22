@@ -2,7 +2,6 @@ use crate::actor::Shoot;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::{color, Pixel};
-use crate::game_context::HeroMovementDirection;
 use crate::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use log::info;
 use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
@@ -72,7 +71,6 @@ pub trait FrameBufferInterface {
             self.write_char(c, Coordinates::new(x, y), color);
         }
     }
-    fn random(&self) -> u32;
 
     /// [x,y] the top left center
     #[inline(always)]
@@ -131,10 +129,4 @@ pub trait FrameBufferInterface {
 
     // draw the local buffer of the framebuffer to the screen
     fn update(&mut self);
-
-    // get input from keyboard
-    fn get_input_keys(
-        &self,
-        hero_coordinates: &Coordinates,
-    ) -> (HeroMovementDirection, Option<Shoot>);
 }
