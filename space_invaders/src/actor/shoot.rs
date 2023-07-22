@@ -1,4 +1,4 @@
-use crate::actor::{Actor, ActorStructure, Enemy, HERO_HEIGHT, TOTAL_ENEMIES};
+use crate::actor::{Actor, ActorStructure, Enemies, Enemy, HERO_HEIGHT, TOTAL_ENEMIES};
 use crate::framebuffer::color::SHOT_COLOR;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Color;
@@ -105,36 +105,12 @@ impl Shoot {
 pub fn create_shoots(
     shoot: Option<Shoot>,
     hero_shoots: &mut usize,
-    enemy_shoots: &mut usize,
-    enemies_dead: &mut usize,
-    enemies: &mut [Enemy],
     rnd: u32,
     shoots: &mut [Option<Shoot>],
+    enemies2: &mut Enemies,
 ) {
     handle_hero_shoot(shoot, hero_shoots, shoots);
-    handle_enemies_shoot(enemy_shoots, enemies_dead, enemies, rnd, shoots);
-}
-fn handle_enemies_shoot(
-    enemy_shoots: &mut usize,
-    enemies_dead: &mut usize,
-    enemies: &mut [Enemy],
-    rnd: u32,
-    shoots: &mut [Option<Shoot>],
-) {
-    if *enemy_shoots < SHOOT_ENEMY_MAX {
-        let enemy_shooting = rnd as usize % (TOTAL_ENEMIES - *enemies_dead);
-        for (id, enemy) in enemies.iter().filter(|e| e.structure.alive).enumerate() {
-            if enemy_shooting == id {
-                for sh in shoots.iter_mut() {
-                    if sh.is_none() {
-                        sh.replace(Shoot::from(enemy));
-                        *enemy_shoots += 1;
-                        break;
-                    }
-                }
-            }
-        }
-    }
+    enemies2.handle_enemies_shoot(rnd, shoots);
 }
 
 fn handle_hero_shoot(shoot: Option<Shoot>, hero_shoots: &mut usize, shoots: &mut [Option<Shoot>]) {

@@ -4,10 +4,7 @@ use crate::actor::{
 };
 use crate::framebuffer::fb_trait::{UI_SCORE_COLOR, UI_SCORE_COORDINATES};
 use crate::EndOfGame::Restarted;
-use crate::{
-    init_enemies, move_enemies, Actor, EndOfGame, FrameBufferInterface, Shoot,
-    TimeManagerInterface, FPS,
-};
+use crate::{Actor, EndOfGame, FrameBufferInterface, Shoot, TimeManagerInterface, FPS};
 use core::alloc;
 use core::cmp;
 use core::ops::Sub;
