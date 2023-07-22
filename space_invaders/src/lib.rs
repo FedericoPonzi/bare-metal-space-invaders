@@ -24,15 +24,14 @@ use core::time::Duration;
 pub use framebuffer::{Coordinates, Pixel};
 
 use log::info;
-use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
 
 #[cfg(feature = "std")]
 pub use crate::time::TimeManager;
 
 pub use crate::time::TimeManagerInterface;
 
-use crate::framebuffer::fb_trait::{UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES};
-use crate::EndOfGame::{Lost, Restarted};
+use crate::framebuffer::fb_trait::{UI_SCORE_COLOR, UI_SCORE_COORDINATES};
+use crate::EndOfGame::{Lost, Restarted, Won};
 #[cfg(feature = "std")]
 pub use framebuffer::StdFrameBuffer;
 
@@ -68,7 +67,7 @@ pub fn run_game(mut fb: impl FrameBufferInterface, time_manager: impl TimeManage
         let result = init_game(&mut fb, &time_manager, high_score, current_score);
         current_score += result.to_score();
         if current_score > high_score {
-            high_score = current_score
+            high_score = current_score;
         }
         if matches!(result, EndOfGame::Lost(_)) {
             current_score = 0;
@@ -139,20 +138,18 @@ fn init_game(
         // with the enemies in very few positions. OFC, if the game is running with so few fps,
         // it would be unplayable anyway.
 
-        for sh in shoots.iter_mut() {
+        for sh in &mut shoots {
             if let Some(shoot) = sh {
                 match shoot.owner {
                     ShootOwner::Enemy => {
                         if shoot.is_hit(hero.get_structure()) {
                             let _ = sh.take();
-                            info!("Hero is dead!");
                             hero.structure.alive = false;
                             continue;
                         }
                         for b in barricades.iter_mut().filter(|ba| ba.structure.alive) {
                             if shoot.is_hit(b.get_structure()) {
                                 let _ = sh.take();
-                                info!("barricade hit!");
                                 b.structure.alive = false;
                                 barricades_alive -= 1;
                                 enemies2.enemy_shoots -= 1;
@@ -170,9 +167,8 @@ fn init_game(
                         {
                             if shoot.is_hit(actor) {
                                 actor.alive = false;
-                                info!("Alien is dead!");
                                 enemies2.enemies_dead += is_enemy;
-                                barricades_alive -= if is_enemy == 0 { 1 } else { 0 };
+                                barricades_alive -= usize::from(is_enemy == 0);
                                 sh.take();
                                 hero_shoots -= 1;
                                 break;
@@ -184,59 +180,20 @@ fn init_game(
         }
 
         // check if game is over.
-        if !hero.structure.alive {
-            info!("Game over, you lost! Hero is dead");
-            return EndOfGame::Lost(enemies2.enemies_dead as u32);
-        }
-
-        let all_aliens_dead = TOTAL_ENEMIES - enemies2.enemies_dead == 0;
-        if all_aliens_dead {
-            info!("Game over, you won! All enemies dead.",);
-            return EndOfGame::Won(enemies2.enemies_dead as u32);
-        }
-
-        for enemy in enemies2.enemies.iter() {
-            if !enemy.structure.alive {
-                continue;
-            }
-            let reached_hero = enemy.structure.coordinates.y() + enemy.structure.height
-                >= hero.structure.coordinates.y();
-            if reached_hero {
-                info!("Game over, you lost! Enemy has reached the hero");
-                return EndOfGame::Lost(enemies2.enemies_dead as u32);
-            }
-            let reached_barricades = enemy.structure.coordinates.y() + enemy.structure.height
-                >= barricades[0].structure.coordinates.y();
-            if reached_barricades && barricades_alive > 0 {
-                for b in barricades.iter_mut() {
-                    b.structure.alive = false;
-                }
-            }
+        let ret = check_game_over(&hero, &enemies2, &mut barricades, barricades_alive);
+        if ret.is_some() {
+            return ret.unwrap();
         }
 
         // 4. draw things:
-        fb.clear_screen();
+        draw(fb, &hero, &enemies2, &shoots, &barricades);
 
-        for enemy in enemies2.enemies.iter() {
-            enemy.draw(fb)
-        }
-
-        hero.draw(fb);
-        for shoot in shoots.iter_mut().flatten() {
-            shoot.draw(fb);
-        }
-
-        for b in barricades.iter() {
-            b.draw(fb);
-        }
         let current_score_updated = current_score + enemies2.enemies_dead as u32;
         let high_score_updated = cmp::max(current_score_updated, high_score);
         let message =
             format!("High Score: {high_score_updated} - Current Score: {current_score_updated}");
         fb.write_ui(UI_SCORE_COORDINATES, &message, UI_SCORE_COLOR);
-        info!("Updating fb...");
         fb.update();
-        info!("Loop completed");
 
         #[cfg(feature = "std")]
         let delta_next =
@@ -277,4 +234,66 @@ pub enum HeroMovementDirection {
     Right,
     Still,
     RestartGame,
+}
+
+fn draw(
+    fb: &mut impl FrameBufferInterface,
+    hero: &Hero,
+    enemies2: &Enemies,
+    shoots: &[Option<Shoot>],
+    barricades: &[Barricade],
+) {
+    fb.clear_screen();
+
+    for enemy in enemies2.enemies.iter() {
+        enemy.draw(fb);
+    }
+
+    hero.draw(fb);
+    for shoot in shoots.iter().flatten() {
+        shoot.draw(fb);
+    }
+
+    for b in barricades.iter() {
+        b.draw(fb);
+    }
+}
+
+/// It also check collision of aliens against barricades.
+fn check_game_over(
+    hero: &Hero,
+    enemies2: &Enemies,
+    barricades: &mut [Barricade],
+    barricades_alive: usize,
+) -> Option<EndOfGame> {
+    if !hero.structure.alive {
+        info!("Game over, you lost! Hero is dead");
+        return Some(Lost(enemies2.enemies_dead as u32));
+    }
+
+    let all_aliens_dead = TOTAL_ENEMIES - enemies2.enemies_dead == 0;
+    if all_aliens_dead {
+        info!("Game over, you won! All enemies dead.",);
+        return Some(Won(enemies2.enemies_dead as u32));
+    }
+
+    for enemy in enemies2.enemies.iter() {
+        if !enemy.structure.alive {
+            continue;
+        }
+        let reached_hero = enemy.structure.coordinates.y() + enemy.structure.height
+            >= hero.structure.coordinates.y();
+        if reached_hero {
+            info!("Game over, you lost! Enemy has reached the hero");
+            return Some(Lost(enemies2.enemies_dead as u32));
+        }
+        let reached_barricades = enemy.structure.coordinates.y() + enemy.structure.height
+            >= barricades[0].structure.coordinates.y();
+        if reached_barricades && barricades_alive > 0 {
+            for b in barricades.iter_mut() {
+                b.structure.alive = false;
+            }
+        }
+    }
+    None
 }
