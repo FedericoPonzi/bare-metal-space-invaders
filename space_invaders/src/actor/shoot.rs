@@ -1,8 +1,10 @@
-use crate::actor::{Actor, ActorStructure, Enemies, Enemy, HERO_HEIGHT, TOTAL_ENEMIES};
+use crate::actor::{
+    Actor, ActorStructure, Barricade, Enemies, Enemy, Hero, HERO_HEIGHT, TOTAL_ENEMIES,
+};
 use crate::framebuffer::color::SHOT_COLOR;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Color;
-use crate::FrameBufferInterface;
+use crate::{FrameBufferInterface, SCREEN_HEIGHT};
 use log::info;
 
 pub const SHOOT_BOX_WIDTH: u32 = 3;
@@ -62,6 +64,14 @@ impl Actor for Shoot {
         );
     }
 }
+impl Default for Shoot {
+    fn default() -> Self {
+        Self {
+            structure: Self::structure(Coordinates::new(0, 0)),
+            owner: ShootOwner::Hero,
+        }
+    }
+}
 
 impl Shoot {
     #[inline(always)]
@@ -101,50 +111,143 @@ impl Shoot {
         }
     }
 }
-
-pub fn create_shoots(
-    shoot: Option<Shoot>,
-    hero_shoots: &mut usize,
-    rnd: u32,
-    shoots: &mut [Option<Shoot>],
-    enemies2: &mut Enemies,
-) {
-    handle_hero_shoot(shoot, hero_shoots, shoots);
-    enemies2.handle_enemies_shoot(rnd, shoots);
+pub struct Shoots {
+    hero_shoots: [Shoot; SHOOT_HERO_MAX],
+    hero_shoots_alive: usize,
+    enemy_shoots: [Shoot; SHOOT_ENEMY_MAX],
+    enemy_shoots_alive: usize,
 }
+impl Shoots {
+    pub const fn new() -> Self {
+        let hero_shoots: [Shoot; SHOOT_HERO_MAX] =
+            [Shoot::new(Coordinates::new(0, 0), ShootOwner::Hero); SHOOT_HERO_MAX];
+        let enemy_shoots: [Shoot; SHOOT_ENEMY_MAX] =
+            [Shoot::new(Coordinates::new(0, 0), ShootOwner::Enemy); SHOOT_ENEMY_MAX];
 
-fn handle_hero_shoot(shoot: Option<Shoot>, hero_shoots: &mut usize, shoots: &mut [Option<Shoot>]) {
-    if *hero_shoots < SHOOT_HERO_MAX && let Some(shoot) = shoot {
-        for sh in shoots.iter_mut() {
-            if sh.is_none() {
-                sh.replace(shoot);
-                *hero_shoots += 1;
+        Self {
+            hero_shoots,
+            enemy_shoots,
+            hero_shoots_alive: 0,
+            enemy_shoots_alive: 0,
+        }
+    }
+    pub fn create_shoots(&mut self, shoot: Option<Shoot>, rnd: u32, enemies: &mut Enemies) {
+        self.handle_hero_shoot(shoot);
+        self.handle_enemies_shoot(rnd, enemies);
+    }
+
+    fn handle_hero_shoot(&mut self, shoot: Option<Shoot>) {
+        if self.hero_shoots_alive >= SHOOT_HERO_MAX || shoot.is_none() {
+            return;
+        }
+        for sh in self.hero_shoots.iter_mut() {
+            if !sh.structure.alive {
+                sh.structure.alive = true;
+                sh.structure = shoot.unwrap().structure;
+                self.hero_shoots_alive += 1;
                 break;
             }
         }
     }
-}
+    fn handle_enemies_shoot(&mut self, rnd: u32, enemies: &mut Enemies) {
+        if self.enemy_shoots_alive >= SHOOT_ENEMY_MAX {
+            return;
+        }
+        let enemy_shooting = rnd as usize % (TOTAL_ENEMIES - enemies.enemies_dead);
+        for (id, enemy) in enemies
+            .enemies
+            .iter()
+            .filter(|e| e.structure.alive)
+            .enumerate()
+        {
+            if enemy_shooting != id {
+                continue;
+            }
+            for sh in self.enemy_shoots.iter_mut().filter(|sh| sh.structure.alive) {
+                self.enemy_shoots_alive += 1;
+                sh.structure.alive = true;
+                sh.structure.coordinates = enemy.structure.coordinates;
+                break;
+            }
+        }
+    }
 
-pub fn shoots_handle_movement(
-    fb: &impl FrameBufferInterface,
-    shoots: &mut [Option<Shoot>],
-    enemy_shoots: &mut usize,
-    hero_shoots: &mut usize,
-    delta_ms: u64,
-) {
-    for sh in shoots.iter_mut() {
-        if let Some(shoot) = sh.as_mut() {
-            shoot.move_forward(delta_ms);
-            if shoot.out_of_screen(fb.height() as u32) {
+    pub fn handle_movement(&mut self, delta_ms: u64) {
+        for sh in self
+            .enemy_shoots
+            .iter_mut()
+            .chain(self.hero_shoots.iter_mut())
+            .filter(|sh| sh.structure.alive)
+        {
+            sh.move_forward(delta_ms);
+            if sh.out_of_screen(SCREEN_HEIGHT as u32) {
                 info!("shoot is out of screen!");
-                if shoot.owner == ShootOwner::Hero {
-                    *hero_shoots -= 1;
+                if sh.owner == ShootOwner::Hero {
+                    self.hero_shoots_alive -= 1;
                 } else {
-                    *enemy_shoots -= 1;
+                    self.enemy_shoots_alive -= 1;
                 }
                 //remove it.
-                let _ = sh.take();
+                sh.structure.alive = false;
             }
+        }
+    }
+
+    pub fn check_collisions(
+        &mut self,
+        hero: &mut Hero,
+        enemies: &mut Enemies,
+        barricades: &mut [Barricade],
+        barricades_alive: &mut usize,
+    ) {
+        // this is not the best way to do it, but it works.
+        // The issue here is that if the loop runs really slowly, then the shoot will overlap
+        // with the enemies in very few positions. OFC, if the game is running with so few fps,
+        // it would be unplayable anyway.
+
+        for shoot in &mut self.hero_shoots.iter_mut().filter(|sh| sh.structure.alive) {
+            for (actor, is_enemy) in enemies
+                .enemies
+                .iter_mut()
+                .map(|e| (&mut e.structure, 1))
+                .chain(barricades.iter_mut().map(|e| (&mut e.structure, 0)))
+                .filter(|a| a.0.alive)
+                .filter(|(actor, _)| shoot.is_hit(actor))
+            {
+                actor.alive = false;
+                enemies.enemies_dead += is_enemy;
+                *barricades_alive -= usize::from(is_enemy == 0);
+                shoot.structure.alive = false;
+                self.hero_shoots_alive -= 1;
+                break;
+            }
+        }
+        for shoot in &mut self.enemy_shoots.iter_mut().filter(|sh| sh.structure.alive) {
+            if shoot.is_hit(hero.get_structure()) {
+                shoot.structure.alive = false;
+                hero.structure.alive = false;
+                // no need to continue, game is over anyway.
+                return;
+            }
+            for b in barricades.iter_mut().filter(|ba| ba.structure.alive) {
+                if shoot.is_hit(b.get_structure()) {
+                    shoot.structure.alive = false;
+                    b.structure.alive = false;
+                    *barricades_alive -= 1;
+                    enemies.enemy_shoots -= 1;
+                    break;
+                }
+            }
+        }
+    }
+    pub fn draw(&self, fb: &mut impl FrameBufferInterface) {
+        for shoot in self
+            .enemy_shoots
+            .iter()
+            .chain(self.hero_shoots.iter())
+            .filter(|sh| sh.structure.alive)
+        {
+            shoot.draw(fb);
         }
     }
 }

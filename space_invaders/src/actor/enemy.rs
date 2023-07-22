@@ -121,27 +121,6 @@ impl Enemies {
         }
         enemies
     }
-    pub(crate) fn handle_enemies_shoot(&mut self, rnd: u32, shoots: &mut [Option<Shoot>]) {
-        if self.enemy_shoots < SHOOT_ENEMY_MAX {
-            let enemy_shooting = rnd as usize % (TOTAL_ENEMIES - self.enemies_dead);
-            for (id, enemy) in self
-                .enemies
-                .iter()
-                .filter(|e| e.structure.alive)
-                .enumerate()
-            {
-                if enemy_shooting == id {
-                    for sh in shoots.iter_mut() {
-                        if sh.is_none() {
-                            sh.replace(Shoot::from(enemy));
-                            self.enemy_shoots += 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     /// largest_x is the largest x coordinate of still alive enemy
     /// lowest_x is the lowest x coordinate of still alive enemy
@@ -213,6 +192,11 @@ impl Enemies {
                     self.lowest_col = (x, y);
                 }
             }
+        }
+    }
+    pub fn draw(&self, fb: &mut impl FrameBufferInterface) {
+        for enemy in self.enemies.iter() {
+            enemy.draw(fb);
         }
     }
 }
