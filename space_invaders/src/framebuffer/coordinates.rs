@@ -6,7 +6,7 @@ pub struct Coordinates {
 
 impl Coordinates {
     #[inline(always)]
-    pub fn new(x: u32, y: u32) -> Self {
+    pub const fn new(x: u32, y: u32) -> Self {
         Self {
             virtual_x: x as f64,
             virtual_y: y as f64,
