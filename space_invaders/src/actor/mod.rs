@@ -1,7 +1,7 @@
 mod barricade;
 mod enemy;
 mod hero;
-mod shoot;
+pub(crate) mod shoot;
 
 pub use barricade::*;
 pub use enemy::*;

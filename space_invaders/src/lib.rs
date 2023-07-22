@@ -8,14 +8,15 @@ extern crate core;
 pub mod actor;
 mod framebuffer;
 
-mod GameContext;
+mod game_context;
+mod platform;
 mod time;
 
-pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 use crate::actor::{
-    Barricade, EnemiesDirection, Hero, ShootOwner, ENEMY_COLS, SHOOT_ENEMY_MAX, SHOOT_HERO_MAX,
-    SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
+    create_shoots, shoots_handle_movement, Barricade, EnemiesDirection, Enemy, Hero, ShootOwner,
+    ENEMY_COLS, SHOOT_ENEMY_MAX, SHOOT_HERO_MAX, SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
 };
+pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
 use core::cmp;
 use core::ops::Sub;
@@ -96,11 +97,11 @@ fn init_game(
     let mut enemies_dead = 0;
     let mut lowest_col = (ENEMY_COLS, 0);
     let mut largest_col = (0, 0);
-    let mut random = [0; 10];
+    // free random :D
+    let mut random = [
+        35, 13, 65, 16, 15, 23, 84, 79, 65, 85, 99, 8, 63, 74, 57, 75, 9, 92, 25, 29,
+    ];
     let mut random_index = 0;
-    for i in 0..random.len() {
-        random[i] = fb.random();
-    }
 
     let mut barricades = Barricade::create_barricades();
     let mut barricades_alive = barricades.len();
@@ -124,58 +125,33 @@ fn init_game(
             info!("Restarting game...");
             return Restarted;
         }
-        if hero_shoots < SHOOT_HERO_MAX && let Some(shoot) = shoot {
-            for sh in shoots.iter_mut() {
-                if sh.is_none() {
-                    sh.replace(shoot);
-                    hero_shoots += 1;
-                    break;
-                }
-            }
-        }
 
-        if enemy_shoots < SHOOT_ENEMY_MAX {
-            let enemy_shooting = rnd as usize % (TOTAL_ENEMIES - enemies_dead);
-            for (id, enemy) in enemies.iter().filter(|e| e.structure.alive).enumerate() {
-                if enemy_shooting == id {
-                    for sh in shoots.iter_mut() {
-                        if sh.is_none() {
-                            sh.replace(Shoot::from(enemy));
-                            enemy_shoots += 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        // 2. Handle shoots. Create if hero's or enemies' as needed.
+        create_shoots(
+            shoot,
+            &mut hero_shoots,
+            &mut enemy_shoots,
+            &mut enemies_dead,
+            &mut enemies,
+            rnd,
+            &mut shoots,
+        );
 
         // 2. Movement
-        for sh in shoots.iter_mut() {
-            if let Some(shoot) = sh.as_mut() {
-                shoot.move_forward(delta_ms);
-                if shoot.out_of_screen(fb.height() as u32) {
-                    info!("shoot is out of screen!");
-                    if shoot.owner == ShootOwner::Hero {
-                        hero_shoots -= 1;
-                    } else {
-                        enemy_shoots -= 1;
-                    }
-                    //remove it.
-                    let _ = sh.take();
-                }
-            }
-        }
-
-        direction = move_enemies(
+        handle_movements(
+            fb,
+            &mut shoots,
+            &mut hero_shoots,
+            &mut enemy_shoots,
             &mut enemies,
-            direction,
+            &mut hero,
+            hero_movement_direction,
             delta_ms,
+            &mut direction,
             &mut lowest_col,
             &mut largest_col,
             enemies_dead,
         );
-
-        hero.handle_movement(hero_movement_direction, delta_ms);
 
         // 3. collision detection
         // this is not the best way to do it, but it works.
@@ -290,6 +266,34 @@ fn init_game(
             std::thread::sleep(delta_next);
         }
     }
+}
+
+fn handle_movements(
+    fb: &mut impl FrameBufferInterface,
+    shoots: &mut [Option<Shoot>],
+    hero_shoots: &mut usize,
+    enemy_shoots: &mut usize,
+    enemies: &mut [Enemy],
+    hero: &mut Hero,
+    hero_movement_direction: HeroMovementDirection,
+    delta_ms: u64,
+    direction: &mut EnemiesDirection,
+    lowest_col: &mut (u32, u32),
+    largest_col: &mut (u32, u32),
+    enemies_dead: usize,
+) {
+    shoots_handle_movement(fb, shoots, enemy_shoots, hero_shoots, delta_ms);
+
+    *direction = move_enemies(
+        enemies,
+        direction,
+        delta_ms,
+        lowest_col,
+        largest_col,
+        enemies_dead,
+    );
+
+    hero.handle_movement(hero_movement_direction, delta_ms);
 }
 
 #[derive(Clone, Copy, Debug)]

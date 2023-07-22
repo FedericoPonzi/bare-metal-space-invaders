@@ -100,7 +100,7 @@ pub fn init_enemies(fb: &impl FrameBufferInterface) -> [Enemy; TOTAL_ENEMIES] {
     }
     enemies
 }
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone)]
 pub enum EnemiesDirection {
     Right,
     Left,
@@ -125,12 +125,13 @@ impl EnemiesDirection {
             + speedup
     }
 }
+
 /// largest_x is the largest x coordinate of still alive enemy
 /// lowest_x is the lowest x coordinate of still alive enemy
 #[inline(always)]
 pub fn move_enemies(
-    enemies: &mut [Enemy; TOTAL_ENEMIES],
-    direction: EnemiesDirection,
+    enemies: &mut [Enemy],
+    direction: &mut EnemiesDirection,
     delta_ms: u64,
     lowest_col: &mut (u32, u32),
     largest_col: &mut (u32, u32),
@@ -140,7 +141,7 @@ pub fn move_enemies(
 
     // speed up per dead enemy
     let speedup = (ENEMY_SPEED_PER_MS as f32 * (enemies_dead as f32 / TOTAL_ENEMIES as f32)) as i32;
-    let speedup = if direction == EnemiesDirection::Right {
+    let speedup = if *direction == EnemiesDirection::Right {
         speedup
     } else {
         -speedup
@@ -148,14 +149,14 @@ pub fn move_enemies(
 
     let lowest_enemy = enemies[(lowest_col.1 * ENEMY_COLS + lowest_col.0) as usize];
     let largest_enemy = enemies[(largest_col.1 * ENEMY_COLS + largest_col.0) as usize];
-    let right_limit = direction == EnemiesDirection::Right
+    let right_limit = *direction == EnemiesDirection::Right
         && largest_enemy.structure.coordinates.x() + ENEMY_WIDTH
             >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
 
     *lowest_col = (ENEMY_COLS, 0);
     *largest_col = (0, 0);
 
-    let left_limit = direction == EnemiesDirection::Left
+    let left_limit = *direction == EnemiesDirection::Left
         && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN as u32;
     if left_limit || right_limit {
         // move down one row, invert direction
@@ -199,5 +200,5 @@ pub fn move_enemies(
             }
         }
     }
-    direction
+    *direction
 }
