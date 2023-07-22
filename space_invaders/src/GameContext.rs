@@ -1,111 +1,65 @@
-#![feature(let_chains)]
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "no_std", feature(format_args_nl))]
-#![warn(clippy::pedantic)]
-
-extern crate core;
-
-pub mod actor;
-mod framebuffer;
-
-mod GameContext;
-mod time;
-
-pub use crate::actor::{init_enemies, move_enemies, Actor, Shoot};
-use crate::actor::{
-    Barricade, EnemiesDirection, Hero, ShootOwner, ENEMY_COLS, SHOOT_ENEMY_MAX, SHOOT_HERO_MAX,
-    SHOOT_MAX_ALLOC, TOTAL_ENEMIES,
-};
-pub use crate::framebuffer::fb_trait::FrameBufferInterface;
-use core::cmp;
-use core::ops::Sub;
-use core::time::Duration;
-pub use framebuffer::{Coordinates, Pixel};
-
+use crate::actor::{Enemy, Hero, ShootOwner, SHOOT_ENEMY_MAX, SHOOT_HERO_MAX, TOTAL_ENEMIES};
+use crate::framebuffer::fb_trait::{UI_SCORE_COLOR, UI_SCORE_COORDINATES};
+use crate::{move_enemies, FrameBufferInterface, TimeManagerInterface, FPS};
+use core::alloc;
 use log::info;
-use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
+use rand::random;
+use std::time::Duration;
 
-#[cfg(feature = "std")]
-pub use crate::time::TimeManager;
-
-pub use crate::time::TimeManagerInterface;
-
-use crate::framebuffer::fb_trait::{UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES};
-use crate::EndOfGame::{Lost, Restarted};
-#[cfg(feature = "std")]
-pub use framebuffer::StdFrameBuffer;
-
-pub const SCREEN_WIDTH: usize = 1280;
-pub const SCREEN_WIDTH_NO_MARGIN: usize = SCREEN_WIDTH - SCREEN_MARGIN;
-pub const SCREEN_HEIGHT: usize = 720;
-pub const SCREEN_MARGIN: usize = 20;
-// todo: in STD, if FPS is very low (i.e. no sleep at the end of the loop) enemies are stopped
-// because the speedup rounds to 0.
-const FPS: u128 = 15;
-
-enum EndOfGame {
-    Restarted,
-    Won(u32),
-    Lost(u32),
+/*
+enum KeyPressedKeys {
+    Left,
+    Right,
+    Shoot,
+    Pause,
 }
-impl EndOfGame {
-    fn to_score(&self) -> u32 {
-        use EndOfGame::*;
-        match self {
-            Won(x) | Lost(x) => *x,
-            Restarted => 0,
-        }
-    }
+trait MemoryAllocator {
+    fn alloc(&self, layout: alloc::Layout) -> *mut u8;
+}
+trait UserInput {
+    fn get_input(&self) -> KeyPressedKeys;
 }
 
-pub fn run_game(mut fb: impl FrameBufferInterface, time_manager: impl TimeManagerInterface) {
-    let mut high_score = 0;
-    let mut current_score: u32 = 0;
-    loop {
-        info!("Starting game...");
-
-        let result = init_game(&mut fb, &time_manager, high_score, current_score);
-        current_score += result.to_score();
-        if current_score > high_score {
-            high_score = current_score
-        }
-        if matches!(result, EndOfGame::Lost(_)) {
-            current_score = 0;
-        }
-    }
+struct GameContext<F, A, U, T>
+where
+    T: TimeManagerInterface,
+    F: FrameBufferInterface,
+    A: MemoryAllocator,
+    U: UserInput,
+{
+    pub hero: Hero,
+    pub enemies: Vec<Enemy>,
+    pub high_score: u32,
+    pub current_score: u32,
+    pub time_manager: T,
+    fb: F,
+    allocator: A,
+    user_input: U,
 }
 
-fn init_game(
-    fb: &mut impl FrameBufferInterface,
-    time_manager: &impl TimeManagerInterface,
-    high_score: u32,
-    current_score: u32,
-) -> EndOfGame {
-    let mut enemies = init_enemies(fb);
+impl<F, A, U, T> GameContext<F, A, U, T>
+where
+    T: TimeManagerInterface,
+    F: FrameBufferInterface,
+    A: MemoryAllocator,
+    U: UserInput,
+{
+    pub fn new(fb: F, user_input: U, allocator: A, high_score: u32) -> Self {
+        Self {
+            hero: Hero::new(&fb),
+            enemies: vec![],
+            current_score: 0,
+            allocator,
+            user_input,
+            high_score,
+            fb,
+        }
+    }
+    pub fn play(mut self) -> bool {
 
-    // todo, instead of using option just set alive: false,
-    let mut shoots: [Option<Shoot>; SHOOT_MAX_ALLOC] = [None; SHOOT_MAX_ALLOC];
-    let mut hero_shoots = 0;
-    let mut enemy_shoots = 0;
-
-    let mut hero = Hero::new(fb);
-
-    let mut direction = EnemiesDirection::Right;
-    let mut last_loop = time_manager.now();
-    // used for speedup calculation.
-    let mut enemies_dead = 0;
-    let mut lowest_col = (ENEMY_COLS, 0);
-    let mut largest_col = (0, 0);
-    let mut random = [0; 10];
-    let mut random_index = 0;
-    for i in 0..random.len() {
-        random[i] = fb.random();
     }
 
-    let mut barricades = Barricade::create_barricades();
-    let mut barricades_alive = barricades.len();
-
-    loop {
+    fn loop_game(&mut self) -> bool {
         let now = time_manager.now();
         let delta_ms = now.sub(last_loop).as_millis() as u64;
         last_loop = now;
@@ -122,7 +76,7 @@ fn init_game(
 
         if matches!(hero_movement_direction, HeroMovementDirection::RestartGame) {
             info!("Restarting game...");
-            return Restarted;
+            return;
         }
         if hero_shoots < SHOOT_HERO_MAX && let Some(shoot) = shoot {
             for sh in shoots.iter_mut() {
@@ -229,13 +183,13 @@ fn init_game(
         // check if game is over.
         if !hero.structure.alive {
             info!("Game over, you lost! Hero is dead");
-            return EndOfGame::Lost(enemies_dead as u32);
+            return;
         }
 
         let all_aliens_dead = TOTAL_ENEMIES - enemies_dead == 0;
         if all_aliens_dead {
             info!("Game over, you won! All enemies dead.",);
-            return EndOfGame::Won(enemies_dead as u32);
+            return;
         }
 
         for enemy in enemies.iter() {
@@ -246,7 +200,7 @@ fn init_game(
                 >= hero.structure.coordinates.y();
             if reached_hero {
                 info!("Game over, you lost! Enemy has reached the hero");
-                return EndOfGame::Lost(enemies_dead as u32);
+                return;
             }
             let reached_barricades = enemy.structure.coordinates.y() + enemy.structure.height
                 >= barricades[0].structure.coordinates.y();
@@ -272,10 +226,8 @@ fn init_game(
         for b in barricades.iter() {
             b.draw(fb);
         }
-        let current_score_updated = current_score + enemies_dead as u32;
-        let high_score_updated = cmp::max(current_score_updated, high_score);
-        let message =
-            format!("High Score: {high_score_updated} - Current Score: {current_score_updated}");
+
+        let message = format!("High Score: 9999 - Current Score: 9999");
         fb.write_ui(UI_SCORE_COORDINATES, &message, UI_SCORE_COLOR);
         info!("Updating fb...");
         fb.update();
@@ -289,13 +241,7 @@ fn init_game(
             #[cfg(feature = "std")]
             std::thread::sleep(delta_next);
         }
+        true;
     }
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum HeroMovementDirection {
-    Left,
-    Right,
-    Still,
-    RestartGame,
-}
+*/

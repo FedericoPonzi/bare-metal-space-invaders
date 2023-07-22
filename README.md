@@ -15,7 +15,6 @@ top left corner is (0,0) and x increases going to the right, and y increases goi
 * r: restart game
 
 # TODO:
-* Add high score
 * refactoring: framebuffer
 * shots rate limit.
 
