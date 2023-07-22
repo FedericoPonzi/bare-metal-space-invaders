@@ -34,7 +34,7 @@ pub const SCREEN_HEIGHT: usize = 720;
 pub const SCREEN_MARGIN: usize = 20;
 // todo: in STD, if FPS is very low (i.e. no sleep at the end of the loop) enemies are stopped
 // because the speedup rounds to 0.
-const FPS: u128 = 30;
+const FPS: u128 = 15;
 
 pub enum EndOfGame {
     Restarted,

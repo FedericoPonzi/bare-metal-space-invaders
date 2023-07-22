@@ -2,7 +2,7 @@ use crate::actor::Shoot;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::{color, Pixel};
-use crate::{SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::{SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
 use log::info;
 use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
 
@@ -14,7 +14,8 @@ pub const LETTER_WIDTH: usize = get_raster_width(LETTER_FONT_WEIGHT, LETTER_FONT
 // +1 because it doesn't take into account the last letter's space to the end of the screen
 pub const UI_SCORE_X: u32 =
     SCREEN_WIDTH as u32 - (UI_MAX_SCORE_LEN as u32 + 1) * LETTER_WIDTH as u32;
-pub const UI_SCORE_Y: u32 = SCREEN_HEIGHT as u32 - RasterHeight::Size16.val() as u32;
+pub const UI_SCORE_Y: u32 =
+    SCREEN_HEIGHT as u32 - RasterHeight::Size16.val() as u32 - SCREEN_MARGIN as u32 / 2;
 pub const UI_SCORE_COORDINATES: Coordinates = Coordinates::new(UI_SCORE_X, UI_SCORE_Y);
 pub const UI_SCORE_COLOR: Color = color::WHITE_COLOR;
 
@@ -37,6 +38,13 @@ pub trait FrameBufferInterface {
         for (row_i, row) in char_raster.raster().iter().enumerate() {
             for (col_i, pixel) in row.iter().enumerate() {
                 if pixel.count_zeros() == 8 {
+                    self.use_pixel(Pixel::new(
+                        Coordinates::new(
+                            coordinates.x() + col_i as u32,
+                            coordinates.y() + row_i as u32,
+                        ),
+                        color::BLUE_COLOR,
+                    ));
                     continue;
                 }
                 self.use_pixel(Pixel::new(
