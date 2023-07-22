@@ -19,12 +19,14 @@ pub use framebuffer::{Coordinates, Pixel};
 use std::time::Duration;
 
 use log::info;
+use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
 
 #[cfg(feature = "std")]
 pub use crate::time::TimeManager;
 
 pub use crate::time::TimeManagerInterface;
 
+use crate::framebuffer::color;
 #[cfg(feature = "std")]
 pub use framebuffer::StdFrameBuffer;
 
@@ -236,6 +238,18 @@ fn init_game(fb: &mut impl FrameBufferInterface, time_manager: &impl TimeManager
             b.draw(fb);
         }
 
+        let message = format!("High Score: 9999 - Current Score: 9999");
+        let letter_width = get_raster_width(FontWeight::Regular, RasterHeight::Size16);
+        // +1 because it doesn't take into account the last letter's space to the end of the screen
+        let ui_x = SCREEN_WIDTH as u32 - (message.len() + 1) as u32 * letter_width as u32;
+        fb.write_ui(
+            Coordinates::new(
+                ui_x,
+                SCREEN_HEIGHT as u32 - RasterHeight::Size16.val() as u32,
+            ),
+            &message,
+            color::WHITE_COLOR,
+        );
         info!("Updating fb...");
         fb.update();
         info!("Loop completed");

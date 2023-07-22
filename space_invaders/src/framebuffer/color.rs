@@ -44,6 +44,6 @@ impl Color {
 
 // pub const BLACK_COLOR: Color = Color::new(0, 0, 0);
 
-// pub const WHITE_COLOR: Color = Color::new(255, 255, 255);
+pub const WHITE_COLOR: Color = Color::new(255, 255, 255);
 
 pub const SHOT_COLOR: Color = Color::new(252, 186, 3);

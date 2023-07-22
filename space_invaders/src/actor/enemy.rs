@@ -129,7 +129,7 @@ impl EnemiesDirection {
 /// lowest_x is the lowest x coordinate of still alive enemy
 #[inline(always)]
 pub fn move_enemies(
-    enemy: &mut [Enemy; TOTAL_ENEMIES],
+    enemies: &mut [Enemy; TOTAL_ENEMIES],
     direction: EnemiesDirection,
     delta_ms: u64,
     lowest_col: &mut (u32, u32),
@@ -146,8 +146,8 @@ pub fn move_enemies(
         -speedup
     };
 
-    let lowest_enemy = enemy[(lowest_col.1 * ENEMY_COLS + lowest_col.0) as usize];
-    let largest_enemy = enemy[(largest_col.1 * ENEMY_COLS + largest_col.0) as usize];
+    let lowest_enemy = enemies[(lowest_col.1 * ENEMY_COLS + lowest_col.0) as usize];
+    let largest_enemy = enemies[(largest_col.1 * ENEMY_COLS + largest_col.0) as usize];
     let right_limit = direction == EnemiesDirection::Right
         && largest_enemy.structure.coordinates.x() + ENEMY_WIDTH
             >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
@@ -162,7 +162,7 @@ pub fn move_enemies(
         for x in 0..ENEMY_COLS {
             for y in 0..ENEMY_ROWS {
                 let index = (y * ENEMY_COLS + x) as usize;
-                let enemy = &mut enemy[index];
+                let enemy = &mut enemies[index];
 
                 let new_y = enemy.structure.coordinates.y() + ENEMY_STEP_DOWN as u32;
                 if enemy.structure.alive {
@@ -184,12 +184,12 @@ pub fn move_enemies(
     for x in 0..ENEMY_COLS {
         for y in 0..ENEMY_ROWS {
             let index = (y * ENEMY_COLS + x) as usize;
-            let enemey = &mut enemy[index];
-            if !enemey.structure.alive {
+            let e = &mut enemies[index];
+            if !e.structure.alive {
                 continue;
             }
 
-            enemey.structure.coordinates.add_virtual_x(offset_x as f64);
+            e.structure.coordinates.add_virtual_x(offset_x as f64);
 
             if core::cmp::max(largest_col.0, x) == x {
                 *largest_col = (x, y);

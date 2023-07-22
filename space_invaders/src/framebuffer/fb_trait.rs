@@ -4,6 +4,8 @@ use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::Pixel;
 use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
 use core::alloc;
+use log::info;
+use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
 
 pub trait FrameBufferInterface {
     fn alloc(&self, layout: alloc::Layout) -> *mut u8;
@@ -19,7 +21,25 @@ pub trait FrameBufferInterface {
         }
     }
 
-    //TODO: fn write_char(&mut self, c: char, coordinates: Coordinates, color: Color);
+    fn write_char(&mut self, c: char, coordinates: Coordinates, color: Color) {
+        use noto_sans_mono_bitmap::{get_raster, get_raster_width, FontWeight, RasterHeight};
+        let char_raster =
+            get_raster(c, FontWeight::Regular, RasterHeight::Size16).expect("unsupported char");
+        for (row_i, row) in char_raster.raster().iter().enumerate() {
+            for (col_i, pixel) in row.iter().enumerate() {
+                if pixel.count_zeros() == 8 {
+                    continue;
+                }
+                self.use_pixel(Pixel::new(
+                    Coordinates::new(
+                        coordinates.x() + col_i as u32,
+                        coordinates.y() + row_i as u32,
+                    ),
+                    color,
+                ));
+            }
+        }
+    }
 
     fn write_ui(&mut self, coordinates: Coordinates, text: &str, color: Color) {
         let mut x = coordinates.x();
@@ -30,8 +50,8 @@ pub trait FrameBufferInterface {
                 x = coordinates.x();
                 continue;
             }
-            self.use_pixel(Pixel::new(Coordinates::new(x, y), color));
-            x += 1;
+            // right distance after each character:
+            x += get_raster_width(FontWeight::Regular, RasterHeight::Size16) as u32;
             if x >= SCREEN_WIDTH as u32 {
                 x = coordinates.x();
                 y += 1;
@@ -39,8 +59,9 @@ pub trait FrameBufferInterface {
                     break;
                 }
             }
-            //self.write_char(c, Coordinates::new(x, y), color);
+            self.write_char(c, Coordinates::new(x, y), color);
         }
+        info!("End pixel:  [{},{}]", x, y);
     }
     fn random(&self) -> u32;
 
