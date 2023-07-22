@@ -1,10 +1,7 @@
 use crate::actor::{Actor, ActorStructure, Sprite};
-use crate::framebuffer::coordinates::Coordinates;
+use crate::framebuffer::Coordinates;
 use crate::game_context::HeroMovementDirection;
-use crate::{
-    FrameBufferInterface, MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH,
-    SCREEN_WIDTH_NO_MARGIN,
-};
+use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN};
 
 const HERO: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");

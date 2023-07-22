@@ -1,8 +1,7 @@
-use crate::actor::{Actor, ActorStructure, Sprite, SHOOT_ENEMY_MAX};
-use crate::framebuffer::coordinates::Coordinates;
-use crate::{
-    FrameBufferInterface, MemoryAllocator, Shoot, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH,
-};
+use crate::actor::{Actor, ActorStructure, Sprite};
+use crate::framebuffer::fb_trait::FrameBufferInterface;
+use crate::framebuffer::Coordinates;
+use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
 
 pub const ENEMY: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data");

@@ -2,11 +2,10 @@ use crate::actor::{
     Actor, ActorStructure, Barricade, Enemies, Enemy, Hero, HERO_HEIGHT, TOTAL_ENEMIES,
 };
 use crate::framebuffer::color::SHOT_COLOR;
-use crate::framebuffer::coordinates::Coordinates;
-use crate::framebuffer::Color;
-use crate::{FrameBufferInterface, SCREEN_HEIGHT};
-use log::{debug, info};
-use std::process::id;
+use crate::framebuffer::fb_trait::FrameBufferInterface;
+use crate::framebuffer::{Color, Coordinates};
+use crate::SCREEN_HEIGHT;
+use log::debug;
 
 pub const SHOOT_BOX_WIDTH: u32 = 3;
 pub const SHOOT_BOX_HEIGHT: u32 = 7;

@@ -4,7 +4,6 @@
 #![warn(clippy::pedantic)]
 
 extern crate core;
-extern crate core;
 
 pub mod actor;
 mod framebuffer;
