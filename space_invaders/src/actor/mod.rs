@@ -10,13 +10,17 @@ pub use shoot::*;
 
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
+use crate::MemoryAllocator;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Sprite {
     sprite: &'static [u32],
 }
 impl Sprite {
-    pub fn new(sprite: &'static [u8], fb: &impl FrameBufferInterface) -> Self {
+    pub fn new<A>(sprite: &'static [u8], fb: &A) -> Self
+    where
+        A: MemoryAllocator,
+    {
         let bytes: &'static [u8] = sprite;
         let len = bytes.len() / core::mem::size_of::<u32>();
 

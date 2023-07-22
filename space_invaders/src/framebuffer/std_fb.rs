@@ -1,7 +1,10 @@
 use crate::actor::{Shoot, ShootOwner, HERO_WIDTH};
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::game_context::HeroMovementDirection;
+use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_WIDTH};
+use core::alloc::Layout;
+use log::info;
 use minifb::{Key, Window, WindowOptions};
 use std::vec;
 
@@ -9,7 +12,11 @@ pub struct StdFrameBuffer {
     pub(crate) window: Window,
     buffer: Vec<u32>,
 }
-
+impl MemoryAllocator for StdFrameBuffer {
+    fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
+        unsafe { std::alloc::alloc(layout) }
+    }
+}
 impl StdFrameBuffer {
     pub fn new() -> Self {
         let mut window = Window::new(
@@ -32,10 +39,6 @@ impl StdFrameBuffer {
 }
 
 impl FrameBufferInterface for StdFrameBuffer {
-    fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
-        unsafe { std::alloc::alloc(layout) }
-    }
-
     //fn write_char(&mut self, c: char, coordinates: Coordinates, color: Color) {}
 
     fn random(&self) -> u32 {
@@ -79,7 +82,7 @@ impl FrameBufferInterface for StdFrameBuffer {
                         ),
                         ShootOwner::Hero,
                     );
-                    //info!("pew!");
+                    info!("pew!");
                     shoot = Some(new_shoot);
                 }
                 _ => {

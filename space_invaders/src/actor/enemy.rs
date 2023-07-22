@@ -1,6 +1,8 @@
 use crate::actor::{Actor, ActorStructure, Sprite, SHOOT_ENEMY_MAX};
 use crate::framebuffer::coordinates::Coordinates;
-use crate::{FrameBufferInterface, Shoot, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
+use crate::{
+    FrameBufferInterface, MemoryAllocator, Shoot, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH,
+};
 
 pub const ENEMY: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data");
@@ -22,14 +24,17 @@ const ENEMY_SPEED_PER_MS: i32 = 25; // pixels per second
 
 pub const TOTAL_ENEMIES: usize = (ENEMY_ROWS * ENEMY_COLS) as usize;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Enemy {
     pub(crate) structure: ActorStructure,
     // every loop iteration, might cause a sub-pixel movement.
 }
 
 impl Enemy {
-    pub fn new(fb: &impl FrameBufferInterface) -> Self {
+    pub fn new<A>(fb: &A) -> Self
+    where
+        A: MemoryAllocator,
+    {
         Enemy {
             structure: ActorStructure {
                 sprite: Some(Sprite::new(ENEMY, fb)),
@@ -41,7 +46,10 @@ impl Enemy {
         }
     }
 
-    pub fn set_green_alien(&mut self, fb: &impl FrameBufferInterface) {
+    pub fn set_green_alien<A>(&mut self, fb: &A)
+    where
+        A: MemoryAllocator,
+    {
         const ENEMY_GREEN: &[u8] =
             include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/green.data");
         const ENEMY_GREEN_WIDTH: u32 = 40;
@@ -52,7 +60,10 @@ impl Enemy {
         self.structure.sprite = Some(Sprite::new(ENEMY_GREEN, fb));
     }
 
-    pub fn set_red_alien(&mut self, fb: &impl FrameBufferInterface) {
+    pub fn set_red_alien<A>(&mut self, fb: &A)
+    where
+        A: MemoryAllocator,
+    {
         const ENEMY_RED: &[u8] =
             include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/red.data");
         const ENEMY_RED_WIDTH: u32 = 39;
@@ -81,23 +92,27 @@ pub struct Enemies {
     pub(crate) enemies_dead: usize,
     lowest_col: (u32, u32),
     largest_col: (u32, u32),
-    pub(crate) enemy_shoots: usize,
     direction: EnemiesDirection,
 }
 impl Enemies {
-    pub(crate) fn new(fb: &impl FrameBufferInterface) -> Self {
+    pub(crate) fn new<A>(fb: &A) -> Self
+    where
+        A: MemoryAllocator,
+    {
         Self {
             enemies: Self::init_enemies(fb),
             lowest_col: (0, 0),
             largest_col: (0, 0),
             enemies_dead: 0,
-            enemy_shoots: 0,
             direction: EnemiesDirection::Right,
         }
     }
 
     #[inline(always)]
-    pub fn init_enemies(fb: &impl FrameBufferInterface) -> [Enemy; TOTAL_ENEMIES] {
+    pub fn init_enemies<A>(fb: &A) -> [Enemy; TOTAL_ENEMIES]
+    where
+        A: MemoryAllocator,
+    {
         let mut enemies = [Enemy::new(fb); TOTAL_ENEMIES];
 
         for x in 0..ENEMY_COLS {

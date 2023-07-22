@@ -2,8 +2,8 @@ use crate::actor::Shoot;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::{color, Pixel};
-use crate::{HeroMovementDirection, SCREEN_HEIGHT, SCREEN_WIDTH};
-use core::alloc;
+use crate::game_context::HeroMovementDirection;
+use crate::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use log::info;
 use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
 
@@ -20,8 +20,6 @@ pub const UI_SCORE_COORDINATES: Coordinates = Coordinates::new(UI_SCORE_X, UI_SC
 pub const UI_SCORE_COLOR: Color = color::WHITE_COLOR;
 
 pub trait FrameBufferInterface {
-    fn alloc(&self, layout: alloc::Layout) -> *mut u8;
-
     fn draw_rect_fill(&mut self, point: Coordinates, width: u32, height: u32, color: Color) {
         for y in 0..height {
             for x in 0..width {
@@ -73,7 +71,6 @@ pub trait FrameBufferInterface {
             }
             self.write_char(c, Coordinates::new(x, y), color);
         }
-        info!("End pixel:  [{},{}]", x, y);
     }
     fn random(&self) -> u32;
 

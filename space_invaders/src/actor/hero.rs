@@ -1,7 +1,8 @@
 use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::coordinates::Coordinates;
+use crate::game_context::HeroMovementDirection;
 use crate::{
-    FrameBufferInterface, HeroMovementDirection, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH,
+    FrameBufferInterface, MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH,
     SCREEN_WIDTH_NO_MARGIN,
 };
 
@@ -22,7 +23,10 @@ pub struct Hero {
 
 impl Hero {
     #[inline(always)]
-    pub fn new(fb: &impl FrameBufferInterface) -> Hero {
+    pub fn new<A>(fb: &A) -> Hero
+    where
+        A: MemoryAllocator,
+    {
         Hero {
             structure: ActorStructure {
                 sprite: Some(Sprite::new(HERO, fb)),
