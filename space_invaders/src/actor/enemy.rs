@@ -1,4 +1,4 @@
-use crate::actor::{Actor, ActorStructure, Sprite};
+use crate::actor::{Actor, ActorStructure, Sprite, HERO_HEIGHT};
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
 use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
@@ -6,13 +6,14 @@ use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
 
-const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 15;
-const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL: u32 = 15;
+const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 20;
+const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL: u32 = 25;
 
 const ENEMY_ROWS: u32 = 4;
 pub const ENEMY_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
     / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW))
     - 10;
+const ENEMY_OFFSET_Y_FROM_MARGIN: u32 = HERO_HEIGHT;
 
 /// by how many pixel should the enemy go down
 pub const ENEMY_STEP_DOWN: usize = (SCREEN_HEIGHT - SCREEN_MARGIN) / ENEMY_HEIGHT as usize;
@@ -133,7 +134,8 @@ impl Enemies {
 
             for y in 0..ENEMY_ROWS {
                 let offset_y = (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y
-                    + SCREEN_MARGIN as u32;
+                    + SCREEN_MARGIN as u32
+                    + ENEMY_OFFSET_Y_FROM_MARGIN;
 
                 enemies[(y * ENEMY_COLS + x) as usize].structure.coordinates =
                     Coordinates::new(offset_x, offset_y);

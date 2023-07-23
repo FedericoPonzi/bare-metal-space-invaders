@@ -1,16 +1,14 @@
 use crate::actor::{
-    Actor, Barricade, Enemies, Hero, Shoots, HERO_ALIGNED, HERO_HEIGHT, HERO_WIDTH, TOTAL_ENEMIES,
+    Actor, Barricade, Enemies, Hero, Shoots, HERO_ALIGNED, HERO_WIDTH, TOTAL_ENEMIES,
 };
 use crate::framebuffer::fb_trait::{
-    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES, UI_SCORE_Y,
+    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
 };
 use crate::framebuffer::Coordinates;
 use crate::EndOfGame::{Lost, Restarted, Won};
 #[cfg(feature = "std")]
 use crate::FPS;
-use crate::{
-    EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput, SCREEN_HEIGHT, SCREEN_MARGIN,
-};
+use crate::{EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput, SCREEN_MARGIN};
 use core::cmp;
 use core::mem;
 use core::ops::Sub;
@@ -176,7 +174,7 @@ where
     }
     fn draw_lifes(&mut self) {
         const UI_LIFES_X: u32 = SCREEN_MARGIN as u32 / 2;
-        const UI_LIFES_Y: u32 = SCREEN_HEIGHT as u32 - HERO_HEIGHT - 11;
+        const UI_LIFES_Y: u32 = SCREEN_MARGIN as u32 / 2;
         const UI_LIFES_X_OFFSET_BETWEEN_LIFES: u32 = 20;
         for i in 0..self.current_lifes {
             unsafe {

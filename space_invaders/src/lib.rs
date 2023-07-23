@@ -33,6 +33,7 @@ pub use framebuffer::StdFrameBuffer;
 pub const SCREEN_WIDTH: usize = 1280;
 pub const SCREEN_WIDTH_NO_MARGIN: usize = SCREEN_WIDTH - SCREEN_MARGIN;
 pub const SCREEN_HEIGHT: usize = 720;
+pub const SCREEN_HEIGHT_NO_MARGIN: usize = SCREEN_HEIGHT - SCREEN_MARGIN;
 pub const SCREEN_MARGIN: usize = 20;
 
 pub(crate) const MAX_LIVES: u8 = 3;
