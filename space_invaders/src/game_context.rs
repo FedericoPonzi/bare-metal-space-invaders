@@ -95,9 +95,10 @@ where
                 return Restarted;
             }
 
+            //info!("Creating shoots");
             // 2. Handle shoots. Create if hero's or enemies' as needed.
             self.shoots.create_shoots(shoot, rnd, &mut self.enemies);
-
+            //info!("handling movement");
             // 2. Movement
             handle_movements(
                 &mut self.shoots,
@@ -106,7 +107,7 @@ where
                 delta_ms,
                 &mut self.enemies,
             );
-
+            //info!("Collision detection");
             // 3. collision detection
             self.shoots.check_collisions(
                 &mut self.hero,
@@ -114,7 +115,7 @@ where
                 &mut self.barricades,
                 &mut self.barricades_alive,
             );
-
+            //info!("Checking if it's game over");
             // check if game is over.
             if let Some(ret) = check_game_over(
                 &self.hero,
@@ -124,7 +125,7 @@ where
             ) {
                 return ret;
             }
-
+            //info!("Drawing things");
             // Draw things:
             draw(
                 self.fb,
@@ -133,18 +134,17 @@ where
                 &self.shoots,
                 &self.barricades,
             );
-
+            //info!("Updating score and writing ui");
             let current_score_updated = self.current_score + self.enemies.enemies_dead as u32;
             let high_score_updated = cmp::max(current_score_updated, self.high_score);
-            let message = format!(
-                "High Score: {high_score_updated} - Current Score: {current_score_updated}"
-            );
             let mut write_ui = |m: &str| self.fb.write_ui(UI_SCORE_COORDINATES, m, UI_SCORE_COLOR);
             let mut message_buf = [0u8; UI_MAX_SCORE_LEN * mem::size_of::<char>()];
             let score_ui =
                 format_to_buffer(&mut message_buf, high_score_updated, current_score_updated)
                     .expect("TODO: panic message");
+            //info!("writing ui...");
             write_ui(score_ui);
+            //info!("Done updating ui");
             self.fb.update();
 
             #[cfg(feature = "std")]
@@ -167,6 +167,7 @@ fn format_to_buffer(
 ) -> Result<&str, core::fmt::Error> {
     let mut output = BufferWrite::new(buffer);
     use core::fmt::Write;
+    info!("Using write!");
     write!(
         output,
         "High Score: {} - Current Score: {}",
