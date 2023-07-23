@@ -2,11 +2,12 @@ use crate::framebuffer::FrameBuffer;
 use crate::mailbox::ReqResp::ResponseSuccessful;
 use crate::mmio::VIDEOCORE_MBOX_BASE;
 use crate::uart_pl011::PL011Uart;
-use crate::{error, println, PL011_UART_START};
+use crate::{debug, error, PL011_UART_START};
 use alloc::vec;
 
 use core::mem;
-use core::ops::BitAnd;
+use core::ops::{Add, BitAnd};
+use core::ptr::slice_from_raw_parts;
 use cortex_a::asm;
 use log::info;
 use space_invaders::{SCREEN_HEIGHT, SCREEN_WIDTH};
@@ -24,7 +25,9 @@ pub const FB_BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH
 /// Set virtual (buffer) width/height
 const FB_VIRTUAL_WH_TAG: u32 = 0x00048004;
 const FB_VIRTUAL_WIDTH: u32 = SCREEN_WIDTH as u32;
-const FB_VIRTUAL_HEIGHT: u32 = SCREEN_HEIGHT as u32;
+const FB_VIRTUAL_HEIGHT: u32 = SCREEN_HEIGHT as u32 * 2;
+
+pub const TOTAL_FB_BUFFER_LEN: usize = FB_VIRTUAL_HEIGHT as usize * FB_VIRTUAL_WIDTH as usize;
 
 const FB_VIRTUAL_OFFSET_TAG: u32 = 0x48009;
 const FB_VIRTUAL_OFFSET_X: u32 = 0;
@@ -53,7 +56,7 @@ pub fn nop() {
 impl RawMailbox {
     pub(crate) fn is_empty(&self) -> bool {
         let status = self.get_status();
-        /*println!(
+        /*debug!(
             "Status {:?}, {}, {}",
             status,
             status & STATUS_EMPTY,
@@ -72,7 +75,8 @@ impl RawMailbox {
     }
 
     pub(crate) fn write_address(&mut self, address: usize) {
-        println!("p0: {:#04x}, as u32: {:#04x}", address, address as u32);
+        debug!("p0: {:#04x}, as u32: {:#04x}", address, address as u32);
+        // todo something is unaligned
         unsafe {
             core::ptr::write_volatile(&mut self.write, address as u32);
         }
@@ -128,7 +132,8 @@ const MBOX_REQUEST: u32 = 0;
 const BOARD_SERIAL_REQ: u32 = 0x00010004;
 const GET_MAX_CLOCK_RATE: u32 = 0x00030004;
 const SET_CLOCK_RATE: u32 = 0x00038002;
-
+const SET_VIRTUAL_BUFFER_OFFSET_TAG: u32 = 0x00048009;
+const TEST_SET_VIRTUAL_BUFFER_OFFSET_TAG: u32 = 0x00044009;
 const LAST_TAG: u32 = 0;
 
 #[repr(align(16))]
@@ -145,9 +150,9 @@ impl<const T: usize> Message<T> {
 }
 
 pub fn query_board_serial() -> Option<u64> {
-    println!("Preparing board message..");
+    debug!("Preparing board message..");
     let message = board_serial_message();
-    println!("Sending message to channel PROP: {:?}", message);
+    debug!("Sending message to channel PROP: {:?}", message);
 
     return if send_message_sync(Channel::PROP, &message) {
         info!(
@@ -237,10 +242,12 @@ pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
         //get the actual channel order. brg = 0, rgb > 0
         let is_rgb = message.0[24] != 0;
 
-        let casted = fb_ptr_raw as *const u32;
-        let casted = unsafe { &*casted };
+        let casted = fb_ptr_raw as *const u32 as *mut u32;
+        let casted = unsafe { &mut *casted };
+        let framebuff: &mut [u32] =
+            unsafe { core::slice::from_raw_parts_mut(casted, TOTAL_FB_BUFFER_LEN) };
         let fb = FrameBuffer {
-            lfb_ptr: casted,
+            framebuff,
             width,
             height,
             pitch,
@@ -248,8 +255,8 @@ pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
             is_rgb,
             is_brg: !is_rgb,
             fb_virtual_width: FB_VIRTUAL_WIDTH,
-            buffer: vec![0; FB_BUFFER_LEN],
             uart: unsafe { PL011Uart::new(PL011_UART_START) },
+            current_index: 0,
         };
         info!(
             "All good, setting up the frame buffer now: {}, height: {}, pitch: {}, depth:{}, is_rgb: {}",
@@ -287,6 +294,33 @@ pub fn set_clock_speed(new_clock: u32) {
     }
 }
 
+pub fn set_virtual_framebuffer_offset(offset: u32) {
+    let message = get_set_virtual_framebuffer_offset_message(offset);
+
+    if send_message_sync(Channel::PROP, &message) {
+        let offset_x = message.0[5];
+        let offset_y = message.0[6];
+        info!("New offset: {}, y{}", offset_x, offset_y);
+    } else {
+        error!("Failed to sending message to set virtual framebuffer offset.");
+    }
+}
+
+pub fn test_set_virtual_framebuffer_offset(offset: u32) {
+    let message = get_test_virtual_fb_offset_message(offset);
+
+    if send_message_sync(Channel::PROP, &message) {
+        let offset_x = message.0[5];
+        let offset_y = message.0[6];
+        info!(
+            " requested offset: {} new offset: {}, y{}",
+            offset, offset_x, offset_y
+        );
+    } else {
+        error!("Failed to sending message to set virtual framebuffer offset.");
+    }
+}
+
 pub fn max_clock_speed() -> Option<u32> {
     //command 0x00030004 ARM clock ID = 0x3
     // BCM2835_MAILBOX_TAG_GET_MAX_CLOCK_RATE 0x00030004
@@ -311,11 +345,43 @@ pub fn max_clock_speed() -> Option<u32> {
         None
     }
 }
-const GET_CLOCK_RATE_MESSAGE_SIZE: usize = 10;
 
+const SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE: usize = 8;
+fn get_set_virtual_framebuffer_offset_message(
+    offset_y: u32,
+) -> Message<SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE> {
+    let mut ret = [0u32; SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE];
+    ret[0] = (SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE * mem::size_of::<u32>()) as u32;
+    ret[1] = MBOX_REQUEST;
+    ret[2] = SET_VIRTUAL_BUFFER_OFFSET_TAG; // set virtual buffer offset
+    ret[3] = 2 * mem::size_of::<u32>() as u32; // value buffer size in bytes
+    ret[4] = 0; // :b 31 clear: request, | b31 set: response b30-b0: value length in bytes
+    ret[5] = 0; //x in pixels
+    ret[6] = offset_y; // y in pixels
+    ret[7] = LAST_TAG;
+    Message(ret)
+}
+
+const TEST_SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE: usize = 8;
+fn get_test_virtual_fb_offset_message(
+    offset_y: u32,
+) -> Message<TEST_SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE> {
+    let mut ret = [0u32; TEST_SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE];
+    ret[0] = (TEST_SET_VIRTUAL_FRAMEBUFFER_OFFSET_MESSAGE_SIZE * mem::size_of::<u32>()) as u32;
+    ret[1] = MBOX_REQUEST;
+    ret[2] = SET_VIRTUAL_BUFFER_OFFSET_TAG; // set virtual buffer offset
+    ret[3] = 2 * mem::size_of::<u32>() as u32; // value buffer size in bytes
+    ret[4] = 0; // :b 31 clear: request, | b31 set: response b30-b0: value length in bytes
+    ret[5] = 0; //x in pixels
+    ret[6] = offset_y; // y in pixels
+    ret[7] = LAST_TAG;
+    Message(ret)
+}
+
+const GET_CLOCK_RATE_MESSAGE_SIZE: usize = 10;
 fn get_set_clock_rate_message(new_clock_hz: u32) -> Message<GET_CLOCK_RATE_MESSAGE_SIZE> {
     let mut ret = [0u32; GET_CLOCK_RATE_MESSAGE_SIZE];
-    ret[0] = (SERIAL_MESSAGE_SIZE * mem::size_of::<u32>()) as u32;
+    ret[0] = (GET_CLOCK_RATE_MESSAGE_SIZE * mem::size_of::<u32>()) as u32;
     ret[1] = MBOX_REQUEST;
 
     ret[2] = SET_CLOCK_RATE; // set clock rate
@@ -369,17 +435,17 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
     let raw_ptr_addr = raw_ptr.cast::<usize>();
     let raw_ptr_addr = raw_ptr_addr as usize;
     let addr_clear_last_4_bits = raw_ptr_addr.bitand(!0x0F);
-    info!(
-        "Raw pointer addr: {:#04x}, cleared: {:#04x}",
-        raw_ptr_addr, addr_clear_last_4_bits
-    );
+    // info!(
+    //     "Raw pointer addr: {:#04x}, cleared: {:#04x}",
+    //     raw_ptr_addr, addr_clear_last_4_bits
+    // );
     let ch_clear_everything_but_last_4_vits = channel as usize & 0xF;
-    info!(
-        "Channel: {:#04x}, cleared: {:#04x}",
-        channel as usize, ch_clear_everything_but_last_4_vits
-    );
+    // info!(
+    //     "Channel: {:#04x}, cleared: {:#04x}",
+    //     channel as usize, ch_clear_everything_but_last_4_vits
+    // );
     let final_addr = addr_clear_last_4_bits | ch_clear_everything_but_last_4_vits;
-    info!("Final addr : {:04x}", final_addr);
+    //info!("Final addr : {:04x}", final_addr);
 
     let raw_mailbox_ptr = VIDEOCORE_MBOX_BASE as *mut RawMailbox;
     let raw_mailbox = unsafe { &mut *raw_mailbox_ptr };
@@ -387,15 +453,15 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
     while raw_mailbox.is_full() {
         nop();
     }
-    println!(
-        "Message: {:?}, {:04x}",
-        message.0,
-        message.0.as_ptr() as usize
-    );
-
-    println!("Mailbox is ready to accept messages...");
+    // debug!(
+    //     "Message: {:?}, {:04x}",
+    //     message.0,
+    //     message.0.as_ptr() as usize
+    // );
+    //
+    // debug!("Mailbox is ready to accept messages...");
     raw_mailbox.write_address(final_addr);
-    println!("Ok, message was sent.. now we wait.");
+    //debug!("Ok, message was sent.. now we wait.");
     /* now wait for the response */
     loop {
         /* is there a response? */
@@ -410,12 +476,12 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
         }
 
         if raw_mailbox.get_read() == final_addr as u32 {
-            println!("Response is: {:?}", message.response_status());
-            println!("Message: {:?}", message.0);
+            // debug!("Response is: {:?}", message.response_status());
+            // debug!("Message: {:?}", message.0);
             if message.response_status().ne(&ReqResp::Request) {
                 return message.is_response_successfull();
             } else {
-                println!("message stll contains a request !?");
+                debug!("message stll contains a request !?");
                 return false;
             }
         }

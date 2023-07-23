@@ -77,7 +77,7 @@ fn main() {
     info!("main");
     let fb = mailbox::lfb_init(0).unwrap();
     println!("Starting game...");
-    space_invaders::run_game(fb, time::BcmGpuTimer::new());
+    space_invaders::run_game(fb, &time::BcmGpuTimer::new());
 }
 
 #[panic_handler]

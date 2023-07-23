@@ -13,7 +13,7 @@ pub struct IrisLogger {
     /// This is used to override the default value for some specific modules.
     /// After initialization, the vector is sorted so that the first (prefix) match
     /// directly gives us the desired log level.
-    module_levels: [(&'static str, LevelFilter); 0],
+    module_levels: [(&'static str, LevelFilter); 1],
 }
 impl IrisLogger {
     pub const fn new() -> IrisLogger {
@@ -22,7 +22,7 @@ impl IrisLogger {
             module_levels: [
                 // Want to filter out modules? Add them here!
                 //("iris_os::allocator2", LevelFilter::Off),
-                //("liballoc::bump2", LevelFilter::Off),
+                ("crate::mailbox", LevelFilter::Off),
             ],
         }
     }

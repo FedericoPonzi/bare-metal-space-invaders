@@ -1,13 +1,14 @@
+use crate::mailbox::{set_virtual_framebuffer_offset, TOTAL_FB_BUFFER_LEN};
 use crate::mmio::PL011_UART_START;
 use crate::uart_pl011::PL011Uart;
-use alloc::vec;
 use core::alloc::GlobalAlloc;
+use log::info;
 use space_invaders::{FrameBufferInterface, KeyPressedKeys, MemoryAllocator, UserInput};
 
 /// RPI 3 framebuffer
 pub struct FrameBuffer {
     // this could be an array.
-    pub lfb_ptr: &'static u32,
+    pub framebuff: &'static mut [u32],
     pub width: u32,
     pub height: u32,
     pub pitch: u32,
@@ -18,8 +19,8 @@ pub struct FrameBuffer {
     /// Bits used by each pixel
     pub depth_bits: u32,
     //todo: using the array instead of vec breaks the system init.
-    pub buffer: vec::Vec<u32>, //[u32; FB_BUFFER_LEN],
     pub uart: PL011Uart,
+    pub current_index: u8,
 }
 impl MemoryAllocator for FrameBuffer {
     #[inline(always)]
@@ -46,7 +47,9 @@ impl UserInput for FrameBuffer {
 impl FrameBufferInterface for FrameBuffer {
     #[inline(always)]
     fn raw_buffer(&mut self) -> &mut [u32] {
-        &mut self.buffer
+        let start = self.width() * self.current_height_offset();
+        let end_of_buffer = start + self.single_screen_len();
+        &mut self.framebuff[start..end_of_buffer]
     }
 
     #[inline(always)]
@@ -56,26 +59,40 @@ impl FrameBufferInterface for FrameBuffer {
 
     #[inline(always)]
     fn update(&mut self) {
-        unsafe {
-            let dst_buffer = self.lfb_ptr as *const u32 as *mut u32;
-            let src_buffer = self.buffer.as_ptr();
-            core::ptr::copy_nonoverlapping(src_buffer, dst_buffer, self.buffer.len());
+        set_virtual_framebuffer_offset(self.current_index as u32 * self.height);
+        self.current_index = Self::inverse(self.current_index);
+        info!(
+            "current index: {}, new offset: {}",
+            self.current_index,
+            self.current_index as u32 * self.height
+        );
+    }
+    #[inline(always)]
+    fn clear_screen(&mut self) {
+        let start = self.width() * self.current_height_offset();
+        let mut slice_ptr = (&mut self.framebuff[start..]).as_mut_ptr();
+        info!("clearing screen, index: {}", self.current_index);
+
+        for i in 0..self.single_screen_len() {
+            unsafe {
+                core::ptr::write_volatile(slice_ptr.add(i), 0);
+            }
         }
     }
 }
 
 impl FrameBuffer {
-    pub fn max_screen_size(&self) -> u32 {
-        (self.depth_bits) * self.width * self.height
+    fn single_screen_len(&self) -> usize {
+        (self.height * self.width) as usize
     }
-    #[inline(always)]
-    pub fn clear_screen(&mut self) {
-        unsafe {
-            core::ptr::write_bytes(
-                self.lfb_ptr as *const u32 as *mut u32,
-                0,
-                self.width as usize * self.height as usize,
-            )
+    fn current_height_offset(&self) -> usize {
+        self.height as usize * self.current_index as usize
+    }
+    fn inverse(index: u8) -> u8 {
+        if index == 1 {
+            0
+        } else {
+            1
         }
     }
 }
