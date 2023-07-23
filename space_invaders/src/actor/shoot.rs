@@ -213,8 +213,7 @@ impl Shoots {
             if shoot.is_hit(hero.get_structure()) {
                 shoot.structure.alive = false;
                 hero.structure.alive = false;
-                // no need to continue, game is over anyway.
-                return;
+                self.enemy_shoots_alive -= 1;
             }
             for b in barricades.iter_mut().filter(|ba| ba.structure.alive) {
                 if shoot.is_hit(b.get_structure()) {

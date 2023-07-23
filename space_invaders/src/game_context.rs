@@ -1,11 +1,16 @@
-use crate::actor::{Actor, Barricade, Enemies, Hero, Shoots, TOTAL_ENEMIES};
-use crate::framebuffer::fb_trait::{
-    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
+use crate::actor::{
+    Actor, Barricade, Enemies, Hero, Shoots, HERO_ALIGNED, HERO_HEIGHT, HERO_WIDTH, TOTAL_ENEMIES,
 };
+use crate::framebuffer::fb_trait::{
+    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES, UI_SCORE_Y,
+};
+use crate::framebuffer::Coordinates;
 use crate::EndOfGame::{Lost, Restarted, Won};
 #[cfg(feature = "std")]
 use crate::FPS;
-use crate::{EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput};
+use crate::{
+    EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput, SCREEN_HEIGHT, SCREEN_MARGIN,
+};
 use core::cmp;
 use core::mem;
 use core::ops::Sub;
@@ -34,6 +39,7 @@ where
     enemies: Enemies,
     random: [u32; 20],
     random_index: usize,
+    current_lifes: u8,
 }
 
 impl<'a, T, F> GameContext<'a, T, F>
@@ -41,7 +47,13 @@ where
     F: FrameBufferInterface + MemoryAllocator + UserInput,
     T: TimeManagerInterface,
 {
-    pub fn new(fb: &'a mut F, high_score: u32, current_score: u32, time_manager: &'a T) -> Self {
+    pub fn new(
+        fb: &'a mut F,
+        high_score: u32,
+        current_score: u32,
+        time_manager: &'a T,
+        current_lifes: u8,
+    ) -> Self {
         let enemies = Enemies::new(fb);
         let shoots = Shoots::new();
         let hero = Hero::new(fb);
@@ -70,6 +82,7 @@ where
             enemies,
             random,
             random_index,
+            current_lifes,
         }
     }
 
@@ -119,10 +132,11 @@ where
             //info!("Checking if it's game over");
             // check if game is over.
             if let Some(ret) = check_game_over(
-                &self.hero,
+                &mut self.hero,
                 &self.enemies,
                 &mut self.barricades,
                 self.barricades_alive,
+                &mut self.current_lifes,
             ) {
                 return ret;
             }
@@ -146,6 +160,7 @@ where
                     .expect("TODO: panic message");
             //info!("writing ui...");
             write_ui(score_ui);
+            self.draw_lifes();
             //info!("Done updating ui");
             self.fb.update();
 
@@ -159,6 +174,23 @@ where
             }
         }
     }
+    fn draw_lifes(&mut self) {
+        const UI_LIFES_X: u32 = SCREEN_MARGIN as u32 / 2;
+        const UI_LIFES_Y: u32 = SCREEN_HEIGHT as u32 - HERO_HEIGHT - 11;
+        const UI_LIFES_X_OFFSET_BETWEEN_LIFES: u32 = 20;
+        for i in 0..self.current_lifes {
+            unsafe {
+                self.fb.display_image(
+                    Coordinates::new(
+                        UI_LIFES_X + i as u32 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
+                        UI_LIFES_Y,
+                    ),
+                    HERO_ALIGNED.unwrap(),
+                    HERO_WIDTH,
+                );
+            }
+        }
+    }
 }
 
 // Function to write formatted data into a buffer
@@ -169,7 +201,6 @@ fn format_to_buffer(
 ) -> Result<&str, core::fmt::Error> {
     use core::fmt::Write;
     let mut output = BufferWrite::new(buffer);
-    info!("Using write!");
     write!(
         output,
         "High Score: {high_score} - Current Score: {current_score}"
@@ -255,14 +286,20 @@ fn draw(
 
 /// It also check collision of aliens against barricades.
 fn check_game_over(
-    hero: &Hero,
+    hero: &mut Hero,
     enemies: &Enemies,
     barricades: &mut [Barricade],
     barricades_alive: usize,
+    current_lifes: &mut u8,
 ) -> Option<EndOfGame> {
     if !hero.structure.alive {
-        info!("Game over, you lost! Hero is dead");
-        return Some(Lost(enemies.enemies_dead));
+        if *current_lifes == 0 {
+            info!("Game over, you lost! You're out of lifes.");
+            return Some(Lost(enemies.enemies_dead));
+        }
+        *current_lifes -= 1;
+        info!("Ouch! Lost a life, {current_lifes} left");
+        hero.structure.alive = true;
     }
 
     let all_aliens_dead = TOTAL_ENEMIES - enemies.enemies_dead == 0;

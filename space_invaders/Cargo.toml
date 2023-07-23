@@ -10,7 +10,7 @@ no_std = []
 
 [dependencies]
 log = "0.4.5"
-noto-sans-mono-bitmap = "0.2.0"
+noto-sans-mono-bitmap = {version = "0.2.0", features = ["size_20"] }
 minifb = {version = "0.24", optional = true }
 env_logger = {version = "0.10", optional = true }
 rand = {version = "0.8", optional = true}

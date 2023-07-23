@@ -2,18 +2,19 @@ use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::fb_trait::UI_SCORE_Y;
 use crate::framebuffer::Coordinates;
 use crate::game_context::HeroMovementDirection;
-use crate::{MemoryAllocator, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN};
+use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN};
 
 const HERO: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");
-static mut HERO_ALIGNED: Option<&[u32]> = None;
+pub static mut HERO_ALIGNED: Option<&[u32]> = None;
 
 pub const HERO_WIDTH: u32 = 60;
 pub(crate) const HERO_HEIGHT: u32 = 29;
 
 pub const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) as u32 - HERO_WIDTH;
-const HERO_SPAWN_Y_OFFSET_FROM_SCORE: u32 = 10;
-pub const HERO_SPAWN_Y: u32 = UI_SCORE_Y - HERO_SPAWN_Y_OFFSET_FROM_SCORE - HERO_HEIGHT;
+const HERO_SPAWN_Y_OFFSET_FROM_SCORE: u32 = 20;
+pub const HERO_SPAWN_Y: u32 =
+    SCREEN_HEIGHT as u32 - HERO_SPAWN_Y_OFFSET_FROM_SCORE - HERO_HEIGHT * 2;
 
 const HERO_SPEED_MS: f64 = 200.0 / 1000.0; // pixels per millisecond
 

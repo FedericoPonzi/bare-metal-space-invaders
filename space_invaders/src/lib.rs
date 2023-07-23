@@ -34,6 +34,9 @@ pub const SCREEN_WIDTH: usize = 1280;
 pub const SCREEN_WIDTH_NO_MARGIN: usize = SCREEN_WIDTH - SCREEN_MARGIN;
 pub const SCREEN_HEIGHT: usize = 720;
 pub const SCREEN_MARGIN: usize = 20;
+
+pub(crate) const MAX_LIVES: u8 = 3;
+
 // todo: in STD, if FPS is very low (i.e. no sleep at the end of the loop) enemies are stopped
 // because the speedup rounds to 0.
 const FPS: u128 = 15;
@@ -108,8 +111,13 @@ where
     let mut current_score: u32 = 0;
     loop {
         info!("Starting game...");
-        let mut game_context =
-            game_context::GameContext::new(&mut fb, high_score, current_score, time_manager);
+        let mut game_context = game_context::GameContext::new(
+            &mut fb,
+            high_score,
+            current_score,
+            time_manager,
+            MAX_LIVES,
+        );
         let result = game_context.play();
         current_score += result.to_score();
         if current_score > high_score {
