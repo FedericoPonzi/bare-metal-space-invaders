@@ -9,13 +9,11 @@ std = ["dep:minifb", "dep:env_logger", "dep:rand"]
 no_std = []
 
 [dependencies]
-micromath = { version = "2.0.0" }
+log = "0.4.5"
+noto-sans-mono-bitmap = "0.2.0"
 minifb = {version = "0.24", optional = true }
 env_logger = {version = "0.10", optional = true }
-log = "0.4.5"
 rand = {version = "0.8", optional = true}
-noto-sans-mono-bitmap = "0.2.0"
-#embedded-time = {version = "0.12", optional = true }
 
 [[bin]]
 name = "space_invaders"

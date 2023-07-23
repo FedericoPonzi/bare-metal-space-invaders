@@ -1,10 +1,8 @@
-use crate::actor::Shoot;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::{color, Pixel};
 use crate::{SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
-use log::info;
-use noto_sans_mono_bitmap::{get_raster_width, FontWeight, RasterHeight};
+use noto_sans_mono_bitmap::{get_raster, get_raster_width, FontWeight, RasterHeight};
 
 pub const UI_MAX_SCORE_LEN: usize = "High Score: 9999 - Current Score: 9999".len();
 
@@ -32,7 +30,6 @@ pub trait FrameBufferInterface {
     }
 
     fn write_char(&mut self, c: char, coordinates: Coordinates, color: Color) {
-        use noto_sans_mono_bitmap::{get_raster, get_raster_width, FontWeight, RasterHeight};
         let char_raster =
             get_raster(c, LETTER_FONT_WEIGHT, LETTER_FONT_HEIGHT).expect("unsupported char");
         for (row_i, row) in char_raster.raster().iter().enumerate() {
@@ -86,21 +83,21 @@ pub trait FrameBufferInterface {
         for y in 0..height {
             self.use_pixel(Pixel::new(
                 Coordinates::new(point.x(), point.y() + y),
-                color.clone(),
+                color,
             ));
             self.use_pixel(Pixel::new(
                 Coordinates::new(point.x() + width, point.y() + y),
-                color.clone(),
+                color,
             ));
         }
         for x in 0..width {
             self.use_pixel(Pixel::new(
                 Coordinates::new(point.x() + x, point.y()),
-                color.clone(),
+                color,
             ));
             self.use_pixel(Pixel::new(
                 Coordinates::new(point.x() + x, point.y() + height),
-                color.clone(),
+                color,
             ));
         }
     }

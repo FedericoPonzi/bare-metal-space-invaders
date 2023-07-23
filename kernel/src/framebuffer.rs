@@ -1,10 +1,9 @@
+use crate::mmio::PL011_UART_START;
 use crate::uart_pl011::PL011Uart;
 use alloc::vec;
 use core::alloc::GlobalAlloc;
-use core::ptr;
 use log::info;
-use space_invaders::actor::{Shoot, ShootOwner};
-use space_invaders::{Coordinates, FrameBufferInterface, HeroMovementDirection, Pixel};
+use space_invaders::{FrameBufferInterface, KeyPressedKeys, MemoryAllocator, UserInput};
 
 /// RPI 3 framebuffer
 pub struct FrameBuffer {
@@ -23,17 +22,29 @@ pub struct FrameBuffer {
     pub buffer: vec::Vec<u32>, //[u32; FB_BUFFER_LEN],
     pub uart: PL011Uart,
 }
-
-impl space_invaders::FrameBufferInterface for FrameBuffer {
+impl MemoryAllocator for FrameBuffer {
     #[inline(always)]
     fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         unsafe { crate::allocator::ALLOCATOR.alloc(layout) }
     }
-
-    fn random(&self) -> u32 {
-        44
+}
+impl UserInput for FrameBuffer {
+    #[inline(always)]
+    fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys> {
+        // TODO: no need to init it again.
+        UARTIterator::new(unsafe { PL011Uart::new(PL011_UART_START) })
+            .filter_map(|ch| match ch {
+                'a' | 'A' => Some(KeyPressedKeys::Left),
+                'd' | 'D' => Some(KeyPressedKeys::Right),
+                //'r' | 'R' => Some(KeyPressedKeys::RestartGame),
+                ' ' => Some(KeyPressedKeys::Shoot),
+                _ => None,
+            })
+            .into_iter()
     }
+}
 
+impl FrameBufferInterface for FrameBuffer {
     #[inline(always)]
     fn raw_buffer(&mut self) -> &mut [u32] {
         &mut self.buffer
@@ -52,50 +63,6 @@ impl space_invaders::FrameBufferInterface for FrameBuffer {
             core::ptr::copy_nonoverlapping(src_buffer, dst_buffer, self.buffer.len());
         }
     }
-
-    #[inline(always)]
-    fn get_input_keys(
-        &self,
-        hero_coordinates: &Coordinates,
-    ) -> (HeroMovementDirection, Option<Shoot>) {
-        let mut max = 10;
-        let mut hero = HeroMovementDirection::Still;
-        let mut shoot = None;
-        loop {
-            max -= 1;
-            match self.uart.read_char_unblocking() {
-                Some(ch) => match ch {
-                    'a' | 'A' => {
-                        hero = HeroMovementDirection::Left;
-                    }
-                    'd' | 'D' => {
-                        hero = HeroMovementDirection::Right;
-                    }
-                    'r' | 'R' => {
-                        hero = HeroMovementDirection::RestartGame;
-                    }
-                    ' ' => {
-                        let new_shoot = Shoot::new(
-                            Coordinates::new(hero_coordinates.x(), hero_coordinates.y() - 20),
-                            ShootOwner::Hero,
-                        );
-                        //info!("pew!");
-                        shoot = Some(new_shoot);
-                    }
-                    received => {
-                        info!("Received key {}, not doing anything.", received);
-                    }
-                },
-                None => break, // input empty
-            }
-            if max == 0 {
-                break;
-            }
-        }
-
-        //info!("Hero direction: {:?},  shoot: {:?} ", hero, shoot.is_some());
-        (hero, shoot)
-    }
 }
 
 impl FrameBuffer {
@@ -110,6 +77,41 @@ impl FrameBuffer {
                 0,
                 self.width as usize * self.height as usize,
             )
+        }
+    }
+}
+
+// Define a custom iterator that reads characters from UART until None is encountered.
+struct UARTIterator {
+    uart: PL011Uart,
+    max_input: usize,
+}
+
+impl UARTIterator {
+    fn new(uart: PL011Uart) -> Self {
+        UARTIterator {
+            uart,
+            max_input: 10,
+        }
+    }
+}
+
+impl Iterator for UARTIterator {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.max_input == 0 {
+            return None;
+        }
+        match self.uart.read_char_unblocking() {
+            Some(ch) => {
+                self.max_input -= 1;
+                Some(ch)
+            }
+            None => {
+                self.max_input = 0;
+                None
+            }
         }
     }
 }

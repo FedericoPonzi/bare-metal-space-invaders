@@ -4,6 +4,7 @@ use crate::mmio::VIDEOCORE_MBOX_BASE;
 use crate::uart_pl011::PL011Uart;
 use crate::{error, println, PL011_UART_START};
 use alloc::vec;
+
 use core::mem;
 use core::ops::BitAnd;
 use cortex_a::asm;
@@ -18,7 +19,7 @@ const FB_PHYSICAL_WIDTH: u32 = SCREEN_WIDTH as u32;
 /// Height of the requested frame buffer
 const FB_PHYSICAL_HEIGHT: u32 = SCREEN_HEIGHT as u32;
 
-pub const BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH as usize;
+pub const FB_BUFFER_LEN: usize = FB_PHYSICAL_HEIGHT as usize * FB_PHYSICAL_WIDTH as usize;
 
 /// Set virtual (buffer) width/height
 const FB_VIRTUAL_WH_TAG: u32 = 0x00048004;
@@ -247,7 +248,7 @@ pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
             is_rgb,
             is_brg: !is_rgb,
             fb_virtual_width: FB_VIRTUAL_WIDTH,
-            buffer: vec![0; BUFFER_LEN],
+            buffer: vec![0; FB_BUFFER_LEN],
             uart: unsafe { PL011Uart::new(PL011_UART_START) },
         };
         info!(

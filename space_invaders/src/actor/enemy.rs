@@ -3,8 +3,6 @@ use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
 use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
 
-pub const ENEMY: &[u8] =
-    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data");
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
 
@@ -23,6 +21,10 @@ const ENEMY_SPEED_PER_MS: i32 = 20; // pixels per second
 
 pub const TOTAL_ENEMIES: usize = (ENEMY_ROWS * ENEMY_COLS) as usize;
 
+static mut GREEN_ENEMY_ALIGNED: Option<&'static [u32]> = None;
+static mut RED_ENEMY_ALIGNED: Option<&'static [u32]> = None;
+static mut ENEMY_ALIGNED: Option<&'static [u32]> = None;
+
 #[derive(Copy, Clone, Debug)]
 pub struct Enemy {
     pub(crate) structure: ActorStructure,
@@ -30,13 +32,13 @@ pub struct Enemy {
 }
 
 impl Enemy {
-    pub fn new<A>(fb: &A) -> Self
+    fn new<A>(fb: &A) -> Self
     where
         A: MemoryAllocator,
     {
         Enemy {
             structure: ActorStructure {
-                sprite: Some(Sprite::new(ENEMY, fb)),
+                sprite: Some(unsafe { Sprite::new(ENEMY_ALIGNED.unwrap(), fb) }),
                 width: ENEMY_WIDTH,
                 height: ENEMY_HEIGHT,
                 alive: true,
@@ -49,28 +51,24 @@ impl Enemy {
     where
         A: MemoryAllocator,
     {
-        const ENEMY_GREEN: &[u8] =
-            include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/green.data");
         const ENEMY_GREEN_WIDTH: u32 = 40;
         const ENEMY_GREEN_HEIGHT: u32 = 32;
-        self.structure.width = ENEMY_GREEN_WIDTH;
-        self.structure.height = ENEMY_GREEN_HEIGHT;
-
-        self.structure.sprite = Some(Sprite::new(ENEMY_GREEN, fb));
+        unsafe {
+            self.structure.sprite = Some(Sprite::new(GREEN_ENEMY_ALIGNED.unwrap(), fb));
+        }
     }
 
     pub fn set_red_alien<A>(&mut self, fb: &A)
     where
         A: MemoryAllocator,
     {
-        const ENEMY_RED: &[u8] =
-            include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/red.data");
         const ENEMY_RED_WIDTH: u32 = 39;
         const ENEMY_RED_HEIGHT: u32 = 31;
         self.structure.width = ENEMY_RED_WIDTH;
         self.structure.height = ENEMY_RED_HEIGHT;
-
-        self.structure.sprite = Some(Sprite::new(ENEMY_RED, fb));
+        unsafe {
+            self.structure.sprite = Some(Sprite::new(RED_ENEMY_ALIGNED.unwrap(), fb));
+        }
     }
 }
 
@@ -112,6 +110,31 @@ impl Enemies {
     where
         A: MemoryAllocator,
     {
+        unsafe {
+            if GREEN_ENEMY_ALIGNED.is_none() {
+                const ENEMY_GREEN: &[u8] = include_bytes!(
+                    "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/green.data"
+                );
+
+                GREEN_ENEMY_ALIGNED = Some(Sprite::align_allocated_u32(ENEMY_GREEN, fb));
+            }
+            if RED_ENEMY_ALIGNED.is_none() {
+                const ENEMY_RED: &[u8] = include_bytes!(
+                    "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/red.data"
+                );
+                RED_ENEMY_ALIGNED = Some(Sprite::align_allocated_u32(ENEMY_RED, fb));
+            }
+            unsafe {
+                if ENEMY_ALIGNED.is_none() {
+                    pub const ENEMY: &[u8] = include_bytes!(
+                        "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data"
+                    );
+                    unsafe {
+                        ENEMY_ALIGNED = Some(Sprite::align_allocated_u32(ENEMY, fb));
+                    }
+                }
+            }
+        }
         let mut enemies = [Enemy::new(fb); TOTAL_ENEMIES];
 
         for x in 0..ENEMY_COLS {

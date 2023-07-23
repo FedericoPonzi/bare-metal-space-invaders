@@ -17,10 +17,13 @@ pub struct Sprite {
     sprite: &'static [u32],
 }
 impl Sprite {
-    pub fn new<A>(sprite: &'static [u8], fb: &A) -> Self
+    pub fn new<A>(sprite: &'static [u32], fb: &A) -> Self
     where
         A: MemoryAllocator,
     {
+        Self { sprite }
+    }
+    pub fn align_allocated_u32(sprite: &'static [u8], fb: &impl MemoryAllocator) -> &'static [u32] {
         let bytes: &'static [u8] = sprite;
         let len = bytes.len() / core::mem::size_of::<u32>();
 
@@ -47,9 +50,7 @@ impl Sprite {
         }
 
         // Create a slice from the new aligned memory
-        let data: &'static [u32] =
-            unsafe { core::slice::from_raw_parts(new_data_ptr as *const u32, len) };
-        Self { sprite: data }
+        unsafe { core::slice::from_raw_parts(new_data_ptr as *const u32, len) }
     }
 }
 

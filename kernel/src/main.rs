@@ -5,6 +5,9 @@
 #![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 #![feature(asm_const)]
+#![feature(return_position_impl_trait_in_trait)]
+
+//extern crate alloc;
 
 extern crate alloc;
 

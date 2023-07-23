@@ -2,7 +2,6 @@ use core::alloc::{GlobalAlloc, Layout};
 
 use crate::uart_pl011::{MutexTrait, NullLock};
 use crate::{debug, info};
-use core::cell::UnsafeCell;
 use core::ops::Range;
 
 /// Gets the memory size
@@ -119,6 +118,7 @@ pub struct BumpAllocator {
     start_memory_free: *mut u8,
     end_memory: *mut u8,
     current: *mut u8,
+    times: usize,
 }
 unsafe impl ImplAllocator for BumpAllocator {
     fn new(start_memory_free: *mut u8, end_memory: *mut u8) -> Self {
@@ -126,10 +126,15 @@ unsafe impl ImplAllocator for BumpAllocator {
             start_memory_free,
             end_memory,
             current: start_memory_free,
+            times: 30,
         }
     }
 
     unsafe fn alloc(&mut self, layout: Layout) -> *mut u8 {
+        if self.times == 0 {
+            panic!("Requested allocation: {:?}", layout);
+        }
+        self.times -= 1;
         let aligned = align_up(self.current as usize, layout.align());
         self.current = aligned
             .checked_add(layout.size())

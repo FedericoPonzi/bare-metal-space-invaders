@@ -1,12 +1,6 @@
-use crate::actor::{Shoot, ShootOwner, HERO_WIDTH};
-use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::game_context::HeroMovementDirection;
 use crate::{KeyPressedKeys, MemoryAllocator, UserInput, SCREEN_HEIGHT, SCREEN_WIDTH};
-use core::alloc::Layout;
-use log::info;
 use minifb::{Key, Window, WindowOptions};
-use std::vec;
 
 pub struct StdFrameBuffer {
     pub(crate) window: Window,
@@ -30,8 +24,8 @@ impl UserInput for StdFrameBuffer {
             })
     }
 }
-impl StdFrameBuffer {
-    pub fn new() -> Self {
+impl Default for StdFrameBuffer {
+    fn default() -> Self {
         let mut window = Window::new(
             "Test - ESC to exit",
             SCREEN_WIDTH,
@@ -48,6 +42,11 @@ impl StdFrameBuffer {
         window.set_title("BareMetal Space Invaders");
 
         StdFrameBuffer { window, buffer }
+    }
+}
+impl StdFrameBuffer {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

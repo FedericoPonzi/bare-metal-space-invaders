@@ -5,6 +5,8 @@
 #![warn(clippy::pedantic)]
 
 extern crate core;
+#[macro_use]
+extern crate alloc;
 
 pub mod actor;
 mod framebuffer;
@@ -13,7 +15,7 @@ mod game_context;
 mod platform;
 mod time;
 
-use core::alloc;
+use core::alloc::Layout;
 use log::info;
 
 #[cfg(feature = "std")]
@@ -22,7 +24,7 @@ pub use crate::time::TimeManager;
 pub use crate::time::TimeManagerInterface;
 
 use crate::actor::{Shoot, ShootOwner, HERO_WIDTH};
-use crate::framebuffer::fb_trait::FrameBufferInterface;
+pub use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
 use crate::game_context::HeroMovementDirection;
 #[cfg(feature = "std")]
@@ -51,7 +53,7 @@ impl EndOfGame {
     }
 }
 pub trait MemoryAllocator {
-    fn alloc(&self, layout: alloc::Layout) -> *mut u8;
+    fn alloc(&self, layout: Layout) -> *mut u8;
 }
 pub trait UserInput {
     fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys>;
@@ -82,6 +84,9 @@ pub trait UserInput {
                     info!("pew!");
                     shoot = Some(new_shoot);
                 }
+                KeyPressedKeys::Restart => {
+                    return (HeroMovementDirection::Still, None);
+                }
                 _ => {
                     hero_movement_direction = HeroMovementDirection::Still;
                 }
@@ -95,7 +100,7 @@ pub enum KeyPressedKeys {
     Left,
     Right,
     Shoot,
-    Pause,
+    Restart,
 }
 
 pub fn run_game<F>(mut fb: F, time_manager: impl TimeManagerInterface)

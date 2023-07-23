@@ -1,8 +1,13 @@
 use crate::actor::{Actor, Barricade, Enemies, Hero, Shoots, TOTAL_ENEMIES};
-use crate::framebuffer::fb_trait::{FrameBufferInterface, UI_SCORE_COLOR, UI_SCORE_COORDINATES};
+use crate::framebuffer::fb_trait::{
+    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
+};
 use crate::EndOfGame::{Lost, Restarted, Won};
-use crate::{EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput, FPS};
+#[cfg(feature = "std")]
+use crate::FPS;
+use crate::{EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput};
 use core::cmp;
+use core::mem;
 use core::ops::Sub;
 use core::time::Duration;
 use log::info;
@@ -134,8 +139,12 @@ where
             let message = format!(
                 "High Score: {high_score_updated} - Current Score: {current_score_updated}"
             );
-            self.fb
-                .write_ui(UI_SCORE_COORDINATES, &message, UI_SCORE_COLOR);
+            let mut write_ui = |m: &str| self.fb.write_ui(UI_SCORE_COORDINATES, m, UI_SCORE_COLOR);
+            let mut message_buf = [0u8; UI_MAX_SCORE_LEN * mem::size_of::<char>()];
+            let score_ui =
+                format_to_buffer(&mut message_buf, high_score_updated, current_score_updated)
+                    .expect("TODO: panic message");
+            write_ui(score_ui);
             self.fb.update();
 
             #[cfg(feature = "std")]
@@ -146,6 +155,62 @@ where
                 #[cfg(feature = "std")]
                 std::thread::sleep(delta_next);
             }
+        }
+    }
+}
+
+// Function to write formatted data into a buffer
+fn format_to_buffer(
+    buffer: &mut [u8],
+    high_score: u32,
+    current_score: u32,
+) -> Result<&str, core::fmt::Error> {
+    let mut output = BufferWrite::new(buffer);
+    use core::fmt::Write;
+    write!(
+        output,
+        "High Score: {} - Current Score: {}",
+        high_score, current_score
+    )?;
+
+    // Convert the buffer slice into a &str
+    let written_length = output.written_length();
+    let formatted_str = core::str::from_utf8(&buffer[..written_length]).unwrap();
+    Ok(formatted_str)
+}
+
+// A custom implementation of core::fmt::Write for writing into a buffer
+struct BufferWrite<'a> {
+    buffer: &'a mut [u8],
+    position: usize,
+}
+
+impl<'a> BufferWrite<'a> {
+    fn new(buffer: &'a mut [u8]) -> Self {
+        BufferWrite {
+            buffer,
+            position: 0,
+        }
+    }
+
+    // Get the total number of bytes written so far
+    fn written_length(&self) -> usize {
+        self.position
+    }
+}
+
+// Implement the Write trait for BufferWrite
+impl<'a> core::fmt::Write for BufferWrite<'a> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        let bytes = s.as_bytes();
+        let remaining_space = self.buffer.len() - self.position;
+
+        if bytes.len() <= remaining_space {
+            self.buffer[self.position..self.position + bytes.len()].copy_from_slice(bytes);
+            self.position += bytes.len();
+            Ok(())
+        } else {
+            Err(core::fmt::Error)
         }
     }
 }
@@ -189,22 +254,22 @@ fn draw(
 /// It also check collision of aliens against barricades.
 fn check_game_over(
     hero: &Hero,
-    enemies2: &Enemies,
+    enemies: &Enemies,
     barricades: &mut [Barricade],
     barricades_alive: usize,
 ) -> Option<EndOfGame> {
     if !hero.structure.alive {
         info!("Game over, you lost! Hero is dead");
-        return Some(Lost(enemies2.enemies_dead as u32));
+        return Some(Lost(enemies.enemies_dead as u32));
     }
 
-    let all_aliens_dead = TOTAL_ENEMIES - enemies2.enemies_dead == 0;
+    let all_aliens_dead = TOTAL_ENEMIES - enemies.enemies_dead == 0;
     if all_aliens_dead {
         info!("Game over, you won! All enemies dead.",);
-        return Some(Won(enemies2.enemies_dead as u32));
+        return Some(Won(enemies.enemies_dead as u32));
     }
 
-    for enemy in enemies2.enemies.iter() {
+    for enemy in enemies.enemies.iter() {
         if !enemy.structure.alive {
             continue;
         }
@@ -212,7 +277,7 @@ fn check_game_over(
             >= hero.structure.coordinates.y();
         if reached_hero {
             info!("Game over, you lost! Enemy has reached the hero");
-            return Some(Lost(enemies2.enemies_dead as u32));
+            return Some(Lost(enemies.enemies_dead as u32));
         }
         let reached_barricades = enemy.structure.coordinates.y() + enemy.structure.height
             >= barricades[0].structure.coordinates.y();

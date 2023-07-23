@@ -15,6 +15,8 @@ top left corner is (0,0) and x increases going to the right, and y increases goi
 * r: restart game
 
 # TODO:
+* fix kernel code
+* look into "as x"
 * shots rate limit.
 
 ---

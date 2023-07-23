@@ -2,10 +2,12 @@ use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::fb_trait::UI_SCORE_Y;
 use crate::framebuffer::Coordinates;
 use crate::game_context::HeroMovementDirection;
-use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN};
+use crate::{MemoryAllocator, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN};
 
 const HERO: &[u8] =
     include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");
+static mut HERO_ALIGNED: Option<&[u32]> = None;
+
 pub const HERO_WIDTH: u32 = 60;
 pub(crate) const HERO_HEIGHT: u32 = 29;
 
@@ -26,14 +28,19 @@ impl Hero {
     where
         A: MemoryAllocator,
     {
-        Hero {
-            structure: ActorStructure {
-                sprite: Some(Sprite::new(HERO, fb)),
-                width: HERO_WIDTH,
-                height: HERO_HEIGHT,
-                alive: true,
-                coordinates: Coordinates::new(HERO_SPAWN_X, HERO_SPAWN_Y),
-            },
+        unsafe {
+            if HERO_ALIGNED.is_none() {
+                HERO_ALIGNED = Some(Sprite::align_allocated_u32(HERO, fb));
+            }
+            Hero {
+                structure: ActorStructure {
+                    sprite: Some(Sprite::new(HERO_ALIGNED.unwrap(), fb)),
+                    width: HERO_WIDTH,
+                    height: HERO_HEIGHT,
+                    alive: true,
+                    coordinates: Coordinates::new(HERO_SPAWN_X, HERO_SPAWN_Y),
+                },
+            }
         }
     }
     #[inline(always)]
