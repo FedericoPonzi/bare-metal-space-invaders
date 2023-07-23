@@ -17,10 +17,7 @@ pub struct Sprite {
     sprite: &'static [u32],
 }
 impl Sprite {
-    pub fn new<A>(sprite: &'static [u32], fb: &A) -> Self
-    where
-        A: MemoryAllocator,
-    {
+    pub fn new(sprite: &'static [u32]) -> Self {
         Self { sprite }
     }
     pub fn align_allocated_u32(sprite: &'static [u8], fb: &impl MemoryAllocator) -> &'static [u32] {

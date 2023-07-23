@@ -1,5 +1,3 @@
-use crate::info;
-
 use crate::mmio::TIMER_REG_BASE;
 use core::time::Duration;
 

@@ -76,7 +76,8 @@ where
     pub fn play(&mut self) -> EndOfGame {
         loop {
             let now = self.time_manager.now();
-            let delta_ms = now.sub(self.last_loop).as_millis() as u64;
+            let delta_ms =
+                u64::try_from(now.sub(self.last_loop).as_millis()).expect("Conversion failed");
             self.last_loop = now;
             if self.random_index == self.random.len() {
                 self.random_index = 0;
@@ -135,7 +136,8 @@ where
                 &self.barricades,
             );
             //info!("Updating score and writing ui");
-            let current_score_updated = self.current_score + self.enemies.enemies_dead as u32;
+            let current_score_updated = self.current_score
+                + u32::try_from(self.enemies.enemies_dead).expect("Conversion failed");
             let high_score_updated = cmp::max(current_score_updated, self.high_score);
             let mut write_ui = |m: &str| self.fb.write_ui(UI_SCORE_COORDINATES, m, UI_SCORE_COLOR);
             let mut message_buf = [0u8; UI_MAX_SCORE_LEN * mem::size_of::<char>()];
@@ -165,13 +167,12 @@ fn format_to_buffer(
     high_score: u32,
     current_score: u32,
 ) -> Result<&str, core::fmt::Error> {
-    let mut output = BufferWrite::new(buffer);
     use core::fmt::Write;
+    let mut output = BufferWrite::new(buffer);
     info!("Using write!");
     write!(
         output,
-        "High Score: {} - Current Score: {}",
-        high_score, current_score
+        "High Score: {high_score} - Current Score: {current_score}"
     )?;
 
     // Convert the buffer slice into a &str
@@ -261,13 +262,13 @@ fn check_game_over(
 ) -> Option<EndOfGame> {
     if !hero.structure.alive {
         info!("Game over, you lost! Hero is dead");
-        return Some(Lost(enemies.enemies_dead as u32));
+        return Some(Lost(enemies.enemies_dead));
     }
 
     let all_aliens_dead = TOTAL_ENEMIES - enemies.enemies_dead == 0;
     if all_aliens_dead {
         info!("Game over, you won! All enemies dead.",);
-        return Some(Won(enemies.enemies_dead as u32));
+        return Some(Won(enemies.enemies_dead));
     }
 
     for enemy in enemies.enemies.iter() {
@@ -278,7 +279,7 @@ fn check_game_over(
             >= hero.structure.coordinates.y();
         if reached_hero {
             info!("Game over, you lost! Enemy has reached the hero");
-            return Some(Lost(enemies.enemies_dead as u32));
+            return Some(Lost(enemies.enemies_dead));
         }
         let reached_barricades = enemy.structure.coordinates.y() + enemy.structure.height
             >= barricades[0].structure.coordinates.y();

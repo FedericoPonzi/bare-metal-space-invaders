@@ -2,7 +2,6 @@ use crate::mmio::PL011_UART_START;
 use crate::uart_pl011::PL011Uart;
 use alloc::vec;
 use core::alloc::GlobalAlloc;
-use log::info;
 use space_invaders::{FrameBufferInterface, KeyPressedKeys, MemoryAllocator, UserInput};
 
 /// RPI 3 framebuffer

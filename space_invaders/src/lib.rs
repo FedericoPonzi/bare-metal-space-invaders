@@ -40,14 +40,14 @@ const FPS: u128 = 15;
 
 pub enum EndOfGame {
     Restarted,
-    Won(u32),
-    Lost(u32),
+    Won(usize),
+    Lost(usize),
 }
 impl EndOfGame {
     fn to_score(&self) -> u32 {
         use EndOfGame::{Lost, Restarted, Won};
         match self {
-            Won(x) | Lost(x) => *x,
+            Won(x) | Lost(x) => u32::try_from(*x).expect("Conversion failed"),
             Restarted => 0,
         }
     }
@@ -87,9 +87,6 @@ pub trait UserInput {
                 KeyPressedKeys::Restart => {
                     return (HeroMovementDirection::Still, None);
                 }
-                _ => {
-                    hero_movement_direction = HeroMovementDirection::Still;
-                }
             }
         }
         (hero_movement_direction, shoot)
@@ -103,7 +100,7 @@ pub enum KeyPressedKeys {
     Restart,
 }
 
-pub fn run_game<F>(mut fb: F, time_manager: impl TimeManagerInterface)
+pub fn run_game<F>(mut fb: F, time_manager: &impl TimeManagerInterface)
 where
     F: FrameBufferInterface + MemoryAllocator + UserInput,
 {
@@ -112,7 +109,7 @@ where
     loop {
         info!("Starting game...");
         let mut game_context =
-            game_context::GameContext::new(&mut fb, high_score, current_score, &time_manager);
+            game_context::GameContext::new(&mut fb, high_score, current_score, time_manager);
         let result = game_context.play();
         current_score += result.to_score();
         if current_score > high_score {

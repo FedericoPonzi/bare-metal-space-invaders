@@ -34,7 +34,7 @@ impl Hero {
             }
             Hero {
                 structure: ActorStructure {
-                    sprite: Some(Sprite::new(HERO_ALIGNED.unwrap(), fb)),
+                    sprite: Some(Sprite::new(HERO_ALIGNED.unwrap())),
                     width: HERO_WIDTH,
                     height: HERO_HEIGHT,
                     alive: true,
