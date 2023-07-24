@@ -70,14 +70,8 @@ impl FrameBufferInterface for FrameBuffer {
     #[inline(always)]
     fn clear_screen(&mut self) {
         let start = self.width() * self.current_height_offset();
-        let mut slice_ptr = (&mut self.framebuff[start..]).as_mut_ptr();
-        info!("clearing screen, index: {}", self.current_index);
-
-        for i in 0..self.single_screen_len() {
-            unsafe {
-                core::ptr::write_volatile(slice_ptr.add(i), 0);
-            }
-        }
+        let end_of_buffer = start + self.single_screen_len();
+        self.framebuff[start..end_of_buffer].fill(0);
     }
 }
 
