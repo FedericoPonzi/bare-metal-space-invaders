@@ -23,10 +23,10 @@ pub use crate::time::TimeManager;
 
 pub use crate::time::TimeManagerInterface;
 
-use crate::actor::{Shoot, ShootOwner, HERO_WIDTH};
+use crate::actor::{HeroMovementDirection, Shoot, ShootOwner, HERO_WIDTH};
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
-use crate::game_context::HeroMovementDirection;
+
 #[cfg(feature = "std")]
 pub use framebuffer::StdFrameBuffer;
 

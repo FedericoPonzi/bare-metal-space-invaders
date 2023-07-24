@@ -2,6 +2,7 @@ use crate::actor::{Actor, ActorStructure, Sprite, HERO_HEIGHT};
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
 use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
+use log::info;
 
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
@@ -18,7 +19,7 @@ const ENEMY_OFFSET_Y_FROM_MARGIN: u32 = HERO_HEIGHT;
 /// by how many pixel should the enemy go down
 pub const ENEMY_STEP_DOWN: usize = (SCREEN_HEIGHT - SCREEN_MARGIN) / ENEMY_HEIGHT as usize;
 
-const ENEMY_SPEED_PER_MS: i32 = 20; // pixels per second
+const ENEMY_SPEED_PER_MS: f64 = 20.0 / 1000.0; // pixels per second
 
 pub const TOTAL_ENEMIES: usize = (ENEMY_ROWS * ENEMY_COLS) as usize;
 
@@ -157,15 +158,6 @@ impl Enemies {
     pub(crate) fn move_enemies(&mut self, delta_ms: u64) {
         // determine the direction.
 
-        // speed up per dead enemy
-        let speedup =
-            (ENEMY_SPEED_PER_MS as f32 * (self.enemies_dead as f32 / TOTAL_ENEMIES as f32)) as i32;
-        let speedup = if self.direction == EnemiesDirection::Right {
-            speedup
-        } else {
-            -speedup
-        };
-
         let lowest_enemy =
             self.enemies[(self.lowest_col.1 * ENEMY_COLS + self.lowest_col.0) as usize];
         let largest_enemy =
@@ -201,7 +193,8 @@ impl Enemies {
             self.direction = self.direction.invert_direction();
             return;
         }
-
+        // speed up per dead enemy
+        let speedup = (self.enemies_dead as f64 * 2.0) / TOTAL_ENEMIES as f64;
         let offset_x = self.direction.to_offset(delta_ms, speedup);
 
         for x in 0..ENEMY_COLS {
@@ -245,13 +238,14 @@ impl EnemiesDirection {
         }
     }
     #[inline(always)]
-    fn to_offset(&self, delta_ms: u64, speedup: i32) -> i32 {
+    fn to_offset(&self, delta_ms: u64, speedup: f64) -> i32 {
         use EnemiesDirection::{Left, Right};
-        let delta_ms = delta_ms as i32;
-        (match self {
-            Right => (ENEMY_SPEED_PER_MS + speedup) * delta_ms,
-            Left => (-ENEMY_SPEED_PER_MS - speedup) * delta_ms,
-        } / 1000)
-            + speedup
+        let delta_ms = delta_ms as f64;
+        let sign = match self {
+            Right => 1.0,
+            Left => -1.0,
+        };
+        let ret = sign * (ENEMY_SPEED_PER_MS + (speedup * ENEMY_SPEED_PER_MS).sqrt()) * delta_ms;
+        ret as i32
     }
 }
