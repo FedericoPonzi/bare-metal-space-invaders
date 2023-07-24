@@ -69,9 +69,16 @@ impl FrameBufferInterface for FrameBuffer {
     }
     #[inline(always)]
     fn clear_screen(&mut self) {
-        let start = self.width() * self.current_height_offset();
-        let end_of_buffer = start + self.single_screen_len();
-        self.framebuff[start..end_of_buffer].fill(0);
+        let mut slice_ptr = (&mut self.raw_buffer()).as_mut_ptr();
+        info!("clearing screen, index: {}", self.current_index);
+
+        for i in 0..self.single_screen_len() {
+            unsafe {
+                // volatile is 10ms slower than non volatile :/
+                // but using non-volatile makes the sprite flicker
+                core::ptr::write_volatile(slice_ptr.add(i), 0);
+            }
+        }
     }
 }
 
