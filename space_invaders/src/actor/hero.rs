@@ -1,6 +1,5 @@
 use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::Coordinates;
-use crate::game_context::HeroMovementDirection;
 use crate::{
     MemoryAllocator, SCREEN_HEIGHT_NO_MARGIN, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN,
 };
@@ -16,6 +15,14 @@ pub const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) as u32 - HERO_WIDTH;
 pub const HERO_SPAWN_Y: u32 = SCREEN_HEIGHT_NO_MARGIN as u32 - HERO_HEIGHT;
 
 const HERO_SPEED_MS: f64 = 200.0 / 1000.0; // pixels per millisecond
+
+#[derive(Clone, Copy, Debug)]
+pub enum HeroMovementDirection {
+    Left,
+    Right,
+    Still,
+    RestartGame,
+}
 
 #[derive(Copy, Clone)]
 pub struct Hero {
