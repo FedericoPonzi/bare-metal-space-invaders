@@ -70,7 +70,7 @@ pub trait Actor {
     fn move_to(&mut self, top_left_offset: Coordinates) {
         self.set_coordinates(top_left_offset);
     }
-
+    #[inline(always)]
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         let structure = self.get_structure();
         if !structure.alive {

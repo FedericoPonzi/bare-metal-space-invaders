@@ -3,7 +3,7 @@ use crate::actor::{
 };
 use crate::framebuffer::color::SHOT_COLOR;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::framebuffer::{Color, Coordinates};
+use crate::framebuffer::{color, Color, Coordinates};
 use crate::{SCREEN_MARGIN, SCREEN_WIDTH};
 
 const BARRICADE_BOX_WIDTH: u32 = SHOOT_BOX_WIDTH + 10;
@@ -43,6 +43,7 @@ impl Actor for Barricade {
     fn set_coordinates(&mut self, coordinates: Coordinates) {
         self.structure.coordinates = coordinates;
     }
+    #[inline(always)]
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         if !self.structure.alive {
             return;

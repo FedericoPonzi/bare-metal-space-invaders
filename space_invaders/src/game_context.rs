@@ -3,7 +3,7 @@ use crate::actor::{
     TOTAL_ENEMIES,
 };
 use crate::framebuffer::fb_trait::{
-    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
+    FrameBufferInterface, LETTER_WIDTH, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
 };
 use crate::framebuffer::Coordinates;
 use crate::EndOfGame::{Lost, Restarted, Won};
@@ -121,6 +121,7 @@ where
                 &mut self.enemies,
                 &mut self.barricades,
                 &mut self.barricades_alive,
+                self.fb,
             );
             //info!("Checking if it's game over");
             // check if game is over.
@@ -129,20 +130,8 @@ where
             }
             //info!("Drawing things");
             // Draw things:
+            self.fb.clear_screen();
             self.draw();
-            //info!("Updating score and writing ui");
-            let current_score_updated = self.current_score
-                + u32::try_from(self.enemies.enemies_dead).expect("Conversion failed");
-            let high_score_updated = cmp::max(current_score_updated, self.high_score);
-            let mut write_ui = |m: &str| self.fb.write_ui(UI_SCORE_COORDINATES, m, UI_SCORE_COLOR);
-            let mut message_buf = [0u8; UI_MAX_SCORE_LEN * mem::size_of::<char>()];
-            let score_ui =
-                format_to_buffer(&mut message_buf, high_score_updated, current_score_updated)
-                    .expect("TODO: panic message");
-            //info!("writing ui...");
-            write_ui(score_ui);
-            self.draw_lifes();
-            //info!("Done updating ui");
             self.fb.update();
 
             #[cfg(feature = "std")]
@@ -157,13 +146,14 @@ where
     }
 
     fn draw(&mut self) {
-        self.fb.clear_screen();
         self.enemies.draw(self.fb);
         self.hero.draw(self.fb);
         self.shoots.draw(self.fb);
         for b in self.barricades.iter() {
             b.draw(self.fb);
         }
+        self.draw_score();
+        self.draw_lifes();
     }
     fn draw_lifes(&mut self) {
         const UI_LIFES_X: u32 = SCREEN_MARGIN as u32 / 2;
@@ -226,6 +216,18 @@ where
             }
         }
         None
+    }
+
+    fn draw_score(&mut self) {
+        let current_score_updated = self.current_score
+            + u32::try_from(self.enemies.enemies_dead).expect("Conversion failed");
+        let high_score_updated = cmp::max(current_score_updated, self.high_score);
+        let mut message_buf = [0u8; UI_MAX_SCORE_LEN * mem::size_of::<char>()];
+        let score_ui =
+            format_to_buffer(&mut message_buf, high_score_updated, current_score_updated)
+                .expect("TODO: panic message");
+        self.fb
+            .write_ui(UI_SCORE_COORDINATES, score_ui, UI_SCORE_COLOR);
     }
 }
 

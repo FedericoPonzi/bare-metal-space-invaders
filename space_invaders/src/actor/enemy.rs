@@ -216,8 +216,9 @@ impl Enemies {
             }
         }
     }
+    #[inline(always)]
     pub fn draw(&self, fb: &mut impl FrameBufferInterface) {
-        for enemy in self.enemies.iter() {
+        for enemy in self.enemies {
             enemy.draw(fb);
         }
     }
@@ -245,7 +246,7 @@ impl EnemiesDirection {
             Right => 1.0,
             Left => -1.0,
         };
-        let ret = sign * (ENEMY_SPEED_PER_MS + (speedup * ENEMY_SPEED_PER_MS).sqrt()) * delta_ms;
+        let ret = sign * (ENEMY_SPEED_PER_MS + (speedup * ENEMY_SPEED_PER_MS)) * delta_ms;
         ret as i32
     }
 }

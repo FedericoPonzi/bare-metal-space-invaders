@@ -182,13 +182,16 @@ impl Shoots {
         }
     }
 
-    pub fn check_collisions(
+    pub fn check_collisions<T>(
         &mut self,
         hero: &mut Hero,
         enemies: &mut Enemies,
         barricades: &mut [Barricade],
         barricades_alive: &mut usize,
-    ) {
+        fb: &mut T,
+    ) where
+        T: FrameBufferInterface,
+    {
         // this is not the best way to do it, but it works.
         // The issue here is that if the loop runs really slowly, then the shoot will overlap
         // with the enemies in very few positions. OFC, if the game is running with so few fps,
