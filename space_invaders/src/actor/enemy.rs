@@ -67,11 +67,9 @@ impl Enemy {
 }
 
 impl Actor for Enemy {
-    #[inline(always)]
     fn get_structure(&self) -> &ActorStructure {
         &self.structure
     }
-    #[inline(always)]
     fn set_coordinates(&mut self, coordinates: Coordinates) {
         self.structure.coordinates = coordinates;
     }
@@ -99,7 +97,6 @@ impl Enemies {
         }
     }
 
-    #[inline(always)]
     pub fn init_enemies<A>(fb: &A) -> [Enemy; TOTAL_ENEMIES]
     where
         A: MemoryAllocator,
@@ -151,7 +148,6 @@ impl Enemies {
 
     /// largest_x is the largest x coordinate of still alive enemy
     /// lowest_x is the lowest x coordinate of still alive enemy
-    #[inline(always)]
     pub(crate) fn move_enemies(&mut self, delta_ms: u64) {
         // determine the direction.
 
@@ -213,7 +209,6 @@ impl Enemies {
             }
         }
     }
-    #[inline(always)]
     pub fn draw(&self, fb: &mut impl FrameBufferInterface) {
         for enemy in self.enemies {
             enemy.draw(fb);
@@ -227,7 +222,6 @@ pub enum EnemiesDirection {
     Left,
 }
 impl EnemiesDirection {
-    #[inline(always)]
     fn invert_direction(&self) -> Self {
         use EnemiesDirection::{Left, Right};
         match self {
@@ -235,7 +229,6 @@ impl EnemiesDirection {
             Left => Right,
         }
     }
-    #[inline(always)]
     fn to_offset(&self, delta_ms: u64, speedup: f64) -> i32 {
         use EnemiesDirection::{Left, Right};
         let delta_ms = delta_ms as f64;

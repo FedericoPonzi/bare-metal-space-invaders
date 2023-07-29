@@ -66,7 +66,6 @@ impl Actor for Shoot {
 }
 
 impl Shoot {
-    #[inline(always)]
     pub const fn new(coordinates: Coordinates, owner: ShootOwner) -> Self {
         Shoot {
             structure: Self::structure(coordinates),
@@ -84,14 +83,12 @@ impl Shoot {
         }
     }
 
-    #[inline(always)]
     pub(crate) fn out_of_screen(&self, screen_height: u32) -> bool {
         let coordinates = self.structure.coordinates;
         (coordinates.y() as i32) - (self.structure.height as i32) <= 0
             || (coordinates.y() + self.structure.height) >= (screen_height)
     }
 
-    #[inline(always)]
     pub(crate) fn move_forward(&mut self, delta: u64) {
         match &self.owner {
             ShootOwner::Hero => {
@@ -170,7 +167,7 @@ impl Shoots {
         {
             sh.move_forward(delta_ms);
             if sh.out_of_screen(SCREEN_HEIGHT) {
-                debug!("shoot is out of screen!");
+                //debug!("shoot is out of screen!");
                 if sh.owner == ShootOwner::Hero {
                     self.hero_shoots_alive -= 1;
                 } else {

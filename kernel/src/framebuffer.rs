@@ -23,13 +23,11 @@ pub struct FrameBuffer {
     pub current_index: u8,
 }
 impl MemoryAllocator for FrameBuffer {
-    #[inline(always)]
     fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         unsafe { crate::allocator::ALLOCATOR.alloc(layout) }
     }
 }
 impl UserInput for FrameBuffer {
-    #[inline(always)]
     fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys> {
         // TODO: no need to init it again.
         UARTIterator::new(unsafe { PL011Uart::new(PL011_UART_START) })
@@ -45,32 +43,24 @@ impl UserInput for FrameBuffer {
 }
 
 impl FrameBufferInterface for FrameBuffer {
-    #[inline(always)]
     fn raw_buffer(&mut self) -> &mut [u32] {
         let start = self.width() * self.current_height_offset();
         let end_of_buffer = start + self.single_screen_len();
         &mut self.framebuff[start..end_of_buffer]
     }
 
-    #[inline(always)]
     fn width(&self) -> usize {
         self.width as usize
     }
 
-    #[inline(always)]
     fn update(&mut self) {
         set_virtual_framebuffer_offset(self.current_index as u32 * self.height);
         self.current_index = Self::inverse(self.current_index);
-        info!(
-            "current index: {}, new offset: {}",
-            self.current_index,
-            self.current_index as u32 * self.height
-        );
     }
-    #[inline(always)]
+
     fn clear_screen(&mut self) {
         let mut slice_ptr = (&mut self.raw_buffer()).as_mut_ptr();
-        info!("clearing screen, index: {}", self.current_index);
+        //info!("clearing screen, index: {}", self.current_index);
 
         for i in 0..self.single_screen_len() {
             unsafe {

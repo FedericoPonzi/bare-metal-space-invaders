@@ -300,7 +300,7 @@ pub fn set_virtual_framebuffer_offset(offset: u32) {
     if send_message_sync(Channel::PROP, &message) {
         let offset_x = message.0[5];
         let offset_y = message.0[6];
-        info!("New offset: {}, y{}", offset_x, offset_y);
+        //info!("New offset: {}, y{}", offset_x, offset_y);
     } else {
         error!("Failed to sending message to set virtual framebuffer offset.");
     }

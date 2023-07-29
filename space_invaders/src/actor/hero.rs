@@ -30,7 +30,6 @@ pub struct Hero {
 }
 
 impl Hero {
-    #[inline(always)]
     pub fn new<A>(fb: &A) -> Hero
     where
         A: MemoryAllocator,
@@ -50,7 +49,6 @@ impl Hero {
             }
         }
     }
-    #[inline(always)]
     fn move_left(&mut self, delta: u64) {
         self.structure
             .coordinates
@@ -60,7 +58,6 @@ impl Hero {
             .set_virtual_x(core::cmp::max(SCREEN_MARGIN, self.structure.coordinates.x()) as f64);
     }
 
-    #[inline(always)]
     fn move_right(&mut self, delta: u64) {
         self.structure
             .coordinates
@@ -72,7 +69,6 @@ impl Hero {
         }
     }
 
-    #[inline(always)]
     pub fn handle_movement(&mut self, hero_movement_direction: HeroMovementDirection, delta: u64) {
         match hero_movement_direction {
             HeroMovementDirection::Left => {

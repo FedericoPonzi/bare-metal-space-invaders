@@ -1,6 +1,6 @@
 use crate::actor::{
-    Actor, Barricade, Enemies, Hero, HeroMovementDirection, Shoots, HERO_ALIGNED, HERO_WIDTH,
-    TOTAL_ENEMIES,
+    Actor, Barricade, Enemies, Hero, HeroMovementDirection, Shoots, HERO_ALIGNED, HERO_HEIGHT,
+    HERO_WIDTH, TOTAL_ENEMIES,
 };
 use crate::framebuffer::fb_trait::{
     FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
@@ -167,6 +167,7 @@ where
                     ),
                     HERO_ALIGNED.unwrap(),
                     HERO_WIDTH,
+                    HERO_HEIGHT,
                 );
             }
         }

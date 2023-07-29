@@ -80,6 +80,7 @@ pub trait Actor {
             structure.coordinates,
             structure.sprite.unwrap().sprite,
             structure.width,
+            structure.height,
         );
     }
 
