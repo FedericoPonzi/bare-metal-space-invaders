@@ -57,9 +57,7 @@ impl Hero {
             .sub_virtual_x(delta as f64 * HERO_SPEED_MS);
         self.structure
             .coordinates
-            .set_virtual_x(
-                core::cmp::max(SCREEN_MARGIN as u32, self.structure.coordinates.x()) as f64,
-            );
+            .set_virtual_x(core::cmp::max(SCREEN_MARGIN, self.structure.coordinates.x()) as f64);
     }
 
     #[inline(always)]
@@ -67,11 +65,10 @@ impl Hero {
         self.structure
             .coordinates
             .add_virtual_x(delta as f64 * HERO_SPEED_MS);
-        if self.structure.coordinates.x() + self.structure.width >= (SCREEN_WIDTH_NO_MARGIN) as u32
-        {
-            self.structure.coordinates.set_virtual_x(
-                (SCREEN_WIDTH as u32 - self.structure.width - SCREEN_MARGIN as u32) as f64,
-            );
+        if self.structure.coordinates.x() + self.structure.width >= SCREEN_WIDTH_NO_MARGIN {
+            self.structure
+                .coordinates
+                .set_virtual_x((SCREEN_WIDTH - self.structure.width - SCREEN_MARGIN) as f64);
         }
     }
 

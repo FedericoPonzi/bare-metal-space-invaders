@@ -28,14 +28,14 @@ impl Default for StdFrameBuffer {
     fn default() -> Self {
         let mut window = Window::new(
             "Test - ESC to exit",
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
+            SCREEN_WIDTH as usize,
+            SCREEN_HEIGHT as usize,
             WindowOptions::default(),
         )
         .unwrap_or_else(|e| {
             panic!("{}", e);
         });
-        let buffer: Vec<u32> = vec![0; SCREEN_WIDTH * SCREEN_HEIGHT];
+        let buffer: Vec<u32> = vec![0; (SCREEN_WIDTH * SCREEN_HEIGHT) as usize];
 
         // Limit to max ~60 fps update rate
         window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
@@ -55,13 +55,9 @@ impl FrameBufferInterface for StdFrameBuffer {
         &mut self.buffer
     }
 
-    fn width(&self) -> usize {
-        SCREEN_WIDTH
-    }
-
     fn update(&mut self) {
         self.window
-            .update_with_buffer(&self.buffer, SCREEN_WIDTH, SCREEN_HEIGHT)
+            .update_with_buffer(&self.buffer, SCREEN_WIDTH as usize, SCREEN_HEIGHT as usize)
             .unwrap();
     }
 }

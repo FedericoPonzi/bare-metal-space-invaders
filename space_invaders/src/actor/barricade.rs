@@ -3,7 +3,7 @@ use crate::actor::{
 };
 use crate::framebuffer::color::SHOT_COLOR;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::framebuffer::{color, Color, Coordinates};
+use crate::framebuffer::{Color, Coordinates};
 use crate::{SCREEN_MARGIN, SCREEN_WIDTH};
 
 const BARRICADE_BOX_WIDTH: u32 = SHOOT_BOX_WIDTH + 10;
@@ -26,7 +26,7 @@ const TOTAL_BARRICADES: usize = 4;
 // screen margin * 4 to add additional margin to the screen.
 // it's divided by TOTAL_BARRICATES + 1 because it's the count of space inbetween barricade.
 const BARRICADE_OFFSET_X: f64 =
-    (SCREEN_WIDTH as u32 - SCREEN_MARGIN as u32 * 4 - BARRICADE_BOX_WIDTH * BARRICADE_COLS) as f64
+    (SCREEN_WIDTH - SCREEN_MARGIN * 4 - BARRICADE_BOX_WIDTH * BARRICADE_COLS) as f64
         / (TOTAL_BARRICADES + 1) as f64;
 
 // This is really a barricade block.
@@ -80,7 +80,7 @@ impl Barricade {
         let mut barricades =
             [Barricade::new(Coordinates::new(0, 0)); TOTAL_BLOCKS_PER_BARRICADE * TOTAL_BARRICADES];
         for i in 1..=TOTAL_BARRICADES {
-            let x = SCREEN_MARGIN as u32 + BARRICADE_OFFSET_X as u32 * i as u32;
+            let x = SCREEN_MARGIN + BARRICADE_OFFSET_X as u32 * i as u32;
             let coordinate = Coordinates::new(x, BARRICADE_OFFSET_Y as u32);
             let new_b = Self::create_barricade(coordinate);
             barricades[(i - 1) * TOTAL_BLOCKS_PER_BARRICADE

@@ -9,9 +9,8 @@ const LETTER_FONT_WEIGHT: FontWeight = FontWeight::Regular;
 const LETTER_FONT_HEIGHT: RasterHeight = RasterHeight::Size20;
 pub const LETTER_WIDTH: usize = get_raster_width(LETTER_FONT_WEIGHT, LETTER_FONT_HEIGHT);
 // +1 because it doesn't take into account the last letter's space to the end of the screen
-pub const UI_SCORE_X: u32 =
-    SCREEN_WIDTH as u32 - (UI_MAX_SCORE_LEN as u32 + 1) * LETTER_WIDTH as u32;
-pub const UI_SCORE_Y: u32 = SCREEN_MARGIN as u32 / 2;
+pub const UI_SCORE_X: u32 = SCREEN_WIDTH - (UI_MAX_SCORE_LEN as u32 + 1) * LETTER_WIDTH as u32;
+pub const UI_SCORE_Y: u32 = SCREEN_MARGIN / 2;
 pub const UI_SCORE_COORDINATES: Coordinates = Coordinates::new(UI_SCORE_X, UI_SCORE_Y);
 pub const UI_SCORE_COLOR: Color = color::WHITE_COLOR;
 
@@ -64,10 +63,10 @@ pub trait FrameBufferInterface {
             }
             // right distance after each character:
             x += LETTER_WIDTH as u32;
-            if x >= SCREEN_WIDTH as u32 {
+            if x >= SCREEN_WIDTH {
                 x = coordinates.x();
                 y += 1;
-                if y >= SCREEN_HEIGHT as u32 {
+                if y >= SCREEN_HEIGHT {
                     break;
                 }
             }
@@ -102,10 +101,16 @@ pub trait FrameBufferInterface {
 
     fn raw_buffer(&mut self) -> &mut [u32];
     fn width(&self) -> usize {
+        self.width_u32() as usize
+    }
+    fn width_u32(&self) -> u32 {
         SCREEN_WIDTH
     }
-    fn height(&self) -> usize {
+    fn height_u32(&self) -> u32 {
         SCREEN_HEIGHT
+    }
+    fn height(&self) -> usize {
+        self.height_u32() as usize
     }
     fn use_pixel(&mut self, pixel: Pixel) {
         let width = self.width();

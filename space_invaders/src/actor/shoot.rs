@@ -169,7 +169,7 @@ impl Shoots {
             .filter(|sh| sh.structure.alive)
         {
             sh.move_forward(delta_ms);
-            if sh.out_of_screen(SCREEN_HEIGHT as u32) {
+            if sh.out_of_screen(SCREEN_HEIGHT) {
                 debug!("shoot is out of screen!");
                 if sh.owner == ShootOwner::Hero {
                     self.hero_shoots_alive -= 1;
@@ -182,16 +182,13 @@ impl Shoots {
         }
     }
 
-    pub fn check_collisions<T>(
+    pub fn check_collisions(
         &mut self,
         hero: &mut Hero,
         enemies: &mut Enemies,
         barricades: &mut [Barricade],
         barricades_alive: &mut usize,
-        fb: &mut T,
-    ) where
-        T: FrameBufferInterface,
-    {
+    ) {
         // this is not the best way to do it, but it works.
         // The issue here is that if the loop runs really slowly, then the shoot will overlap
         // with the enemies in very few positions. OFC, if the game is running with so few fps,

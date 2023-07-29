@@ -3,7 +3,7 @@ use crate::actor::{
     TOTAL_ENEMIES,
 };
 use crate::framebuffer::fb_trait::{
-    FrameBufferInterface, LETTER_WIDTH, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
+    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
 };
 use crate::framebuffer::Coordinates;
 use crate::EndOfGame::{Lost, Restarted, Won};
@@ -121,7 +121,6 @@ where
                 &mut self.enemies,
                 &mut self.barricades,
                 &mut self.barricades_alive,
-                self.fb,
             );
             //info!("Checking if it's game over");
             // check if game is over.
@@ -156,8 +155,8 @@ where
         self.draw_lifes();
     }
     fn draw_lifes(&mut self) {
-        const UI_LIFES_X: u32 = SCREEN_MARGIN as u32 / 2;
-        const UI_LIFES_Y: u32 = SCREEN_MARGIN as u32 / 2;
+        const UI_LIFES_X: u32 = SCREEN_MARGIN / 2;
+        const UI_LIFES_Y: u32 = SCREEN_MARGIN / 2;
         const UI_LIFES_X_OFFSET_BETWEEN_LIFES: u32 = 20;
         for i in 0..self.current_lifes {
             unsafe {

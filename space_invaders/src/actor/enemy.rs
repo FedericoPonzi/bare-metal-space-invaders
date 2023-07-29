@@ -2,7 +2,6 @@ use crate::actor::{Actor, ActorStructure, Sprite, HERO_HEIGHT};
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
 use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
-use log::info;
 
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
@@ -11,13 +10,13 @@ const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW: u32 = 20;
 const BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL: u32 = 25;
 
 const ENEMY_ROWS: u32 = 4;
-pub const ENEMY_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2) as u32
+pub const ENEMY_COLS: u32 = ((SCREEN_WIDTH - SCREEN_MARGIN * 2)
     / (ENEMY_WIDTH + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW))
     - 10;
 const ENEMY_OFFSET_Y_FROM_MARGIN: u32 = HERO_HEIGHT;
 
 /// by how many pixel should the enemy go down
-pub const ENEMY_STEP_DOWN: usize = (SCREEN_HEIGHT - SCREEN_MARGIN) / ENEMY_HEIGHT as usize;
+pub const ENEMY_STEP_DOWN: u32 = (SCREEN_HEIGHT - SCREEN_MARGIN) / ENEMY_HEIGHT;
 
 const ENEMY_SPEED_PER_MS: f64 = 20.0 / 1000.0; // pixels per second
 
@@ -131,21 +130,19 @@ impl Enemies {
 
         for x in 0..ENEMY_COLS {
             let offset_x =
-                SCREEN_MARGIN as u32 + ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
+                SCREEN_MARGIN + ENEMY_WIDTH * x + (BASE_OFFSET_IN_BETWEEN_ALIENS_IN_ROW * x);
 
             for y in 0..ENEMY_ROWS {
+                let index = (y * ENEMY_COLS + x) as usize;
                 let offset_y = (ENEMY_HEIGHT + BASE_OFFSET_IN_BETWEEN_ALIENS_IN_COL) * y
-                    + SCREEN_MARGIN as u32
+                    + SCREEN_MARGIN
                     + ENEMY_OFFSET_Y_FROM_MARGIN;
 
-                enemies[(y * ENEMY_COLS + x) as usize].structure.coordinates =
-                    Coordinates::new(offset_x, offset_y);
-
+                enemies[index].structure.coordinates = Coordinates::new(offset_x, offset_y);
                 if y == 1 {
-                    enemies[(y * ENEMY_COLS + x) as usize].set_green_alien();
-                }
-                if y >= 2 {
-                    enemies[(y * ENEMY_COLS + x) as usize].set_red_alien();
+                    enemies[index].set_green_alien();
+                } else if y > 1 {
+                    enemies[index].set_red_alien();
                 }
             }
         }
@@ -164,13 +161,13 @@ impl Enemies {
             self.enemies[(self.largest_col.1 * ENEMY_COLS + self.largest_col.0) as usize];
         let right_limit = self.direction == EnemiesDirection::Right
             && largest_enemy.structure.coordinates.x() + ENEMY_WIDTH
-                >= (SCREEN_WIDTH - SCREEN_MARGIN) as u32;
+                >= (SCREEN_WIDTH - SCREEN_MARGIN);
 
         self.lowest_col = (ENEMY_COLS, 0);
         self.largest_col = (0, 0);
 
         let left_limit = self.direction == EnemiesDirection::Left
-            && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN as u32;
+            && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN;
         if left_limit || right_limit {
             // move down one row, invert direction
             for x in 0..ENEMY_COLS {
