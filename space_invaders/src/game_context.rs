@@ -86,6 +86,7 @@ where
     }
 
     pub fn play(&mut self) -> EndOfGame {
+        let mut last_draw_loop: Duration = self.time_manager.now();
         loop {
             let now = self.time_manager.now();
             let delta_ms =
@@ -97,7 +98,6 @@ where
             let rnd = self.random[self.random_index];
             self.random_index += 1;
 
-            info!("delta_ms: {}", delta_ms);
             // 1. Get input
             let (hero_movement_direction, shoot) =
                 self.fb.get_input_keys(&self.hero.structure.coordinates);
@@ -149,21 +149,24 @@ where
                 "game over: {}",
                 self.time_manager.since(self.last_loop).as_millis()
             );*/
+            if now.sub(last_draw_loop).as_millis() >= 1000 / crate::FPS {
+                //info!("Drawing things");
+                // Draw things:
+                self.fb.clear_screen();
+                /*info!(
+                    "clear screen: {}",
+                    self.time_manager.since(self.last_loop).as_millis()
+                );*/
 
-            //info!("Drawing things");
-            // Draw things:
-            self.fb.clear_screen();
-            /*info!(
-                "clear screen: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
+                self.draw();
+                /*info!(
+                    "draw: {}",
+                    self.time_manager.since(self.last_loop).as_millis()
+                );*/
+                self.fb.update();
+                last_draw_loop = now;
+            }
 
-            self.draw();
-            /*info!(
-                "draw: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
-            self.fb.update();
             /*info!(
                 "fb update: {}",
                 self.time_manager.since(self.last_loop).as_millis()

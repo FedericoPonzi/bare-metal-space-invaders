@@ -23,7 +23,7 @@ const SHOOT_SPEED: f64 = 400.0 / 1000.0;
 pub const SHOOT_SPAWN_OFFSET_Y: u32 = HERO_HEIGHT + 10;
 
 pub const SHOOT_ENEMY_MAX: usize = 3;
-pub const SHOOT_HERO_MAX: usize = 4;
+pub const SHOOT_HERO_MAX: usize = 3;
 
 // max shots available to render at a time
 pub const SHOOT_MAX_ALLOC: usize = SHOOT_ENEMY_MAX + SHOOT_HERO_MAX;
