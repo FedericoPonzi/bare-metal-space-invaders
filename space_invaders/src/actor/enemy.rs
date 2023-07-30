@@ -2,6 +2,7 @@ use crate::actor::{Actor, ActorStructure, Sprite, HERO_HEIGHT};
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
 use crate::{MemoryAllocator, SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
+use log::info;
 
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
@@ -198,7 +199,7 @@ impl Enemies {
                     continue;
                 }
 
-                e.structure.coordinates.add_virtual_x(offset_x as f64);
+                e.structure.coordinates.add_virtual_x(offset_x);
 
                 if core::cmp::max(self.largest_col.0, x) == x {
                     self.largest_col = (x, y);
@@ -210,7 +211,7 @@ impl Enemies {
         }
     }
     pub fn draw(&self, fb: &mut impl FrameBufferInterface) {
-        for enemy in self.enemies {
+        for enemy in self.enemies.iter().filter(|e| e.structure.alive) {
             enemy.draw(fb);
         }
     }
@@ -229,7 +230,7 @@ impl EnemiesDirection {
             Left => Right,
         }
     }
-    fn to_offset(&self, delta_ms: u64, speedup: f64) -> i32 {
+    fn to_offset(&self, delta_ms: u64, speedup: f64) -> f64 {
         use EnemiesDirection::{Left, Right};
         let delta_ms = delta_ms as f64;
         let sign = match self {
@@ -237,6 +238,6 @@ impl EnemiesDirection {
             Left => -1.0,
         };
         let ret = sign * (ENEMY_SPEED_PER_MS + (speedup * ENEMY_SPEED_PER_MS)) * delta_ms;
-        ret as i32
+        ret
     }
 }

@@ -98,7 +98,6 @@ where
             self.random_index += 1;
 
             info!("delta_ms: {}", delta_ms);
-
             // 1. Get input
             let (hero_movement_direction, shoot) =
                 self.fb.get_input_keys(&self.hero.structure.coordinates);
@@ -107,13 +106,27 @@ where
                 info!("Restarting game...");
                 return Restarted;
             }
+            /*info!(
+                "got input: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
 
             //info!("Creating shoots");
             // 2. Handle shoots. Create if hero's or enemies' as needed.
             self.shoots.create_shoots(shoot, rnd, &mut self.enemies);
+            /* info!(
+                "created shots: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
+
             //info!("handling movement");
             // 2. Movement
             self.handle_movements(hero_movement_direction, delta_ms);
+            /*info!(
+                "handled movement: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
+
             //info!("Collision detection");
             // 3. collision detection
             self.shoots.check_collisions(
@@ -122,16 +135,39 @@ where
                 &mut self.barricades,
                 &mut self.barricades_alive,
             );
+            /*info!(
+                "collision check: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
+
             //info!("Checking if it's game over");
             // check if game is over.
             if let Some(ret) = self.check_game_over() {
                 return ret;
             }
+            /*info!(
+                "game over: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
+
             //info!("Drawing things");
             // Draw things:
             self.fb.clear_screen();
+            /*info!(
+                "clear screen: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
+
             self.draw();
+            /*info!(
+                "draw: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
             self.fb.update();
+            /*info!(
+                "fb update: {}",
+                self.time_manager.since(self.last_loop).as_millis()
+            );*/
 
             #[cfg(feature = "std")]
             let delta_next = Duration::from_millis(1000 / FPS as u64)
@@ -148,7 +184,7 @@ where
         self.enemies.draw(self.fb);
         self.hero.draw(self.fb);
         self.shoots.draw(self.fb);
-        for b in self.barricades.iter() {
+        for b in self.barricades.iter().filter(|b| b.structure.alive) {
             b.draw(self.fb);
         }
         self.draw_score();
@@ -187,7 +223,7 @@ where
                 return Some(Lost(self.enemies.enemies_dead));
             }
             self.current_lifes -= 1;
-            info!("Ouch! Lost a life, {} left", self.current_lifes);
+            //info!("Ouch! Lost a life, {} left", self.current_lifes);
             self.hero.structure.alive = true;
         }
 

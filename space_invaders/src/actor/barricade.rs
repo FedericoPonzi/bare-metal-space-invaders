@@ -43,11 +43,8 @@ impl Actor for Barricade {
     fn set_coordinates(&mut self, coordinates: Coordinates) {
         self.structure.coordinates = coordinates;
     }
-    #[inline(always)]
+
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
-        if !self.structure.alive {
-            return;
-        }
         fb.draw_rect_fill(
             self.structure.coordinates,
             self.structure.width,
@@ -58,7 +55,6 @@ impl Actor for Barricade {
 }
 
 impl Barricade {
-    #[inline(always)]
     pub fn new(coordinates: Coordinates) -> Self {
         Barricade {
             structure: Self::structure(coordinates),

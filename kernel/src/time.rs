@@ -23,13 +23,11 @@ struct ArmTimeRegisters {
 /// Note the GPU uses timers 0 and 2, so they're reserved.
 pub struct BcmGpuTimer;
 impl BcmGpuTimer {
-    #[inline(always)]
     pub const fn new() -> Self {
         Self
     }
 }
 impl space_invaders::TimeManagerInterface for BcmGpuTimer {
-    #[inline(always)]
     fn now(&self) -> Duration {
         let ptr = TIMER_REG_BASE as *mut ArmTimeRegisters;
         let registers = unsafe { &mut *ptr };

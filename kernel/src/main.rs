@@ -7,8 +7,6 @@
 #![feature(asm_const)]
 #![feature(return_position_impl_trait_in_trait)]
 
-//extern crate alloc;
-
 extern crate alloc;
 
 use crate::logger::IrisLogger;
@@ -45,7 +43,6 @@ mod mmio {
 }
 
 #[inline]
-
 unsafe fn kernel_init() -> ! {
     SCTLR_EL1.modify(SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
     unsafe {

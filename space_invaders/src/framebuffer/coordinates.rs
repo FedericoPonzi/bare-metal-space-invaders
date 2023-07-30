@@ -21,6 +21,16 @@ impl Coordinates {
         self.virtual_y as u32
     }
 
+    #[inline(always)]
+    pub fn x_usize(&self) -> usize {
+        self.virtual_x as usize
+    }
+
+    #[inline(always)]
+    pub fn y_usize(&self) -> usize {
+        self.virtual_y as usize
+    }
+
     pub fn add_virtual_x(&mut self, x: f64) {
         self.virtual_x += x;
     }

@@ -383,7 +383,6 @@ impl PL011Uart {
     /// # Safety
     ///
     /// - The user must ensure to provide a correct MMIO start address.
-    #[inline(always)]
     pub const unsafe fn new(mmio_start_addr: usize) -> Self {
         Self {
             inner: NullLock::new(PL011UartInner::new(mmio_start_addr)),
@@ -392,7 +391,6 @@ impl PL011Uart {
 }
 
 impl PL011Uart {
-    #[inline(always)]
     pub(crate) unsafe fn init(&self) -> Result<(), &'static str> {
         (&self.inner).lock(|inner| inner.init());
 
@@ -405,7 +403,6 @@ impl PL011Uart {
         (&self.inner).lock(|inner| inner.write_char(c));
     }
 
-    #[inline(always)]
     pub(crate) fn write_fmt(&self, args: core::fmt::Arguments) -> fmt::Result {
         // Fully qualified syntax for the call to `core::fmt::Write::write_fmt()` to increase
         // readability.

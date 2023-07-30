@@ -66,16 +66,11 @@ pub trait Actor {
     fn get_structure(&self) -> &ActorStructure;
     fn set_coordinates(&mut self, coordinates: Coordinates);
 
-    #[inline(always)]
     fn move_to(&mut self, top_left_offset: Coordinates) {
         self.set_coordinates(top_left_offset);
     }
-    #[inline(always)]
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         let structure = self.get_structure();
-        if !structure.alive {
-            return;
-        }
         fb.display_image(
             structure.coordinates,
             structure.sprite.unwrap().sprite,
@@ -84,7 +79,6 @@ pub trait Actor {
         );
     }
 
-    #[inline(always)]
     fn is_hit(&self, actor_structure: &ActorStructure) -> bool {
         let self_structure = self.get_structure();
         let self_coordinates = self_structure.coordinates;

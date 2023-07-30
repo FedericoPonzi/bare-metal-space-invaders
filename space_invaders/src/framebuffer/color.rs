@@ -1,6 +1,7 @@
 #[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
 pub struct Color {
-    rgb: u32,
+    pub(crate) rgb: u32,
 }
 
 impl Color {
@@ -15,7 +16,7 @@ impl Color {
     }
     // inlined to increase performance by 5~ ms per loop
     #[inline(always)]
-    pub fn as_rgb_u32(&self) -> u32 {
+    pub fn rgb(&self) -> u32 {
         self.rgb
     }
 }

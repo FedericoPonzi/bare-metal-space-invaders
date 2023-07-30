@@ -1,5 +1,5 @@
 use crate::actor::{
-    Actor, ActorStructure, Barricade, Enemies, Enemy, Hero, HERO_HEIGHT, TOTAL_ENEMIES,
+    Actor, ActorStructure, Barricade, Enemies, Enemy, Hero, HERO_HEIGHT, HERO_WIDTH, TOTAL_ENEMIES,
 };
 use crate::framebuffer::color::SHOT_COLOR;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
@@ -9,6 +9,12 @@ use log::debug;
 
 pub const SHOOT_BOX_WIDTH: u32 = 3;
 pub const SHOOT_BOX_HEIGHT: u32 = 7;
+
+// in the middle of the hero
+pub const SHOOT_OFFSET_X_HERO: u32 = HERO_WIDTH / 2;
+// 10 pixels above the hero
+pub const SHOOT_OFFSET_Y_HERO: u32 = 10;
+
 const SHOOT_BOX_COLOR: Color = SHOT_COLOR;
 
 // pixels per millisecond.

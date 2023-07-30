@@ -1,9 +1,10 @@
-use crate::mailbox::{set_virtual_framebuffer_offset, TOTAL_FB_BUFFER_LEN};
+use crate::mailbox::set_virtual_framebuffer_offset;
 use crate::mmio::PL011_UART_START;
 use crate::uart_pl011::PL011Uart;
 use core::alloc::GlobalAlloc;
-use log::info;
-use space_invaders::{FrameBufferInterface, KeyPressedKeys, MemoryAllocator, UserInput};
+use space_invaders::{
+    Color, Coordinates, FrameBufferInterface, KeyPressedKeys, MemoryAllocator, UserInput,
+};
 
 /// RPI 3 framebuffer
 pub struct FrameBuffer {
@@ -43,6 +44,15 @@ impl UserInput for FrameBuffer {
 }
 
 impl FrameBufferInterface for FrameBuffer {
+    fn use_pixel(&mut self, point: Coordinates, color: Color) {
+        let width = self.width();
+        let slice_ptr =
+            (&mut self.raw_buffer()[width * point.y_usize() + point.x_usize()..]).as_mut_ptr();
+        unsafe {
+            core::ptr::write_volatile(slice_ptr, color.rgb());
+        }
+    }
+
     fn raw_buffer(&mut self) -> &mut [u32] {
         let start = self.width() * self.current_height_offset();
         let end_of_buffer = start + self.single_screen_len();
@@ -53,22 +63,18 @@ impl FrameBufferInterface for FrameBuffer {
         self.width as usize
     }
 
-    fn update(&mut self) {
-        set_virtual_framebuffer_offset(self.current_index as u32 * self.height);
-        self.current_index = Self::inverse(self.current_index);
-    }
-
     fn clear_screen(&mut self) {
         let mut slice_ptr = (&mut self.raw_buffer()).as_mut_ptr();
-        //info!("clearing screen, index: {}", self.current_index);
-
         for i in 0..self.single_screen_len() {
             unsafe {
-                // volatile is 10ms slower than non volatile :/
-                // but using non-volatile makes the sprite flicker
                 core::ptr::write_volatile(slice_ptr.add(i), 0);
             }
         }
+    }
+
+    fn update(&mut self) {
+        set_virtual_framebuffer_offset(self.current_index as u32 * self.height);
+        self.current_index = Self::inverse(self.current_index);
     }
 }
 

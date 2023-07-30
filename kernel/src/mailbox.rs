@@ -3,11 +3,9 @@ use crate::mailbox::ReqResp::ResponseSuccessful;
 use crate::mmio::VIDEOCORE_MBOX_BASE;
 use crate::uart_pl011::PL011Uart;
 use crate::{debug, error, PL011_UART_START};
-use alloc::vec;
 
 use core::mem;
-use core::ops::{Add, BitAnd};
-use core::ptr::slice_from_raw_parts;
+use core::ops::BitAnd;
 use cortex_a::asm;
 use log::info;
 use space_invaders::{SCREEN_HEIGHT, SCREEN_WIDTH};

@@ -4,9 +4,9 @@
 #![cfg_attr(feature = "no_std", feature(format_args_nl))]
 #![warn(clippy::pedantic)]
 
-extern crate core;
 #[macro_use]
 extern crate alloc;
+extern crate core;
 
 pub mod actor;
 mod framebuffer;
@@ -23,9 +23,12 @@ pub use crate::time::TimeManager;
 
 pub use crate::time::TimeManagerInterface;
 
-use crate::actor::{HeroMovementDirection, Shoot, ShootOwner, HERO_WIDTH};
+use crate::actor::{
+    HeroMovementDirection, Shoot, ShootOwner, HERO_WIDTH, SHOOT_OFFSET_X_HERO, SHOOT_OFFSET_Y_HERO,
+};
+
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::framebuffer::Coordinates;
+pub use crate::framebuffer::{Color, Coordinates};
 
 #[cfg(feature = "std")]
 pub use framebuffer::StdFrameBuffer;
@@ -40,7 +43,7 @@ pub(crate) const MAX_LIVES: u8 = 3;
 
 // todo: in STD, if FPS is very low (i.e. no sleep at the end of the loop) enemies are stopped
 // because the speedup rounds to 0.
-const FPS: u128 = 15;
+const FPS: u128 = 30;
 
 pub enum EndOfGame {
     Restarted,
@@ -80,12 +83,12 @@ pub trait UserInput {
                 KeyPressedKeys::Shoot => {
                     let new_shoot = Shoot::new(
                         Coordinates::new(
-                            hero_coordinates.x() + HERO_WIDTH / 2,
-                            hero_coordinates.y() - 10,
+                            hero_coordinates.x() + SHOOT_OFFSET_X_HERO,
+                            hero_coordinates.y() - SHOOT_OFFSET_Y_HERO,
                         ),
                         ShootOwner::Hero,
                     );
-                    info!("pew!");
+                    //info!("pew!");
                     shoot = Some(new_shoot);
                 }
                 KeyPressedKeys::Restart => {

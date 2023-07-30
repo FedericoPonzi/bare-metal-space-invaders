@@ -2,7 +2,6 @@ use crate::PL011_UART;
 use core::fmt;
 
 #[doc(hidden)]
-#[inline(always)]
 pub fn _print(args: fmt::Arguments) {
     PL011_UART.write_fmt(args).unwrap();
 }
