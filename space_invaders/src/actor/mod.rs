@@ -53,7 +53,6 @@ impl Sprite {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ActorStructure {
-    // TODO: can probably use RC instead
     pub sprite: Option<Sprite>,
     pub width: u32,
     pub height: u32,

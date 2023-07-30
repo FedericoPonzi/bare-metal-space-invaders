@@ -6,8 +6,6 @@
 #![feature(panic_info_message)]
 #![feature(asm_const)]
 #![feature(return_position_impl_trait_in_trait)]
-#![feature(portable_simd)]
-#![feature(asm)]
 
 extern crate alloc;
 
@@ -74,7 +72,7 @@ unsafe fn kernel_init() -> ! {
 
 fn main() {
     info!("main");
-    let fb = mailbox::lfb_init(0).unwrap();
+    let fb = mailbox::lfb_init(0).expect("Failed to init framebuffer");
     println!("Starting game...");
     space_invaders::run_game(fb, &time::BcmGpuTimer::new());
 }

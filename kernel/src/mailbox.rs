@@ -54,12 +54,6 @@ pub fn nop() {
 impl RawMailbox {
     pub(crate) fn is_empty(&self) -> bool {
         let status = self.get_status();
-        /*debug!(
-            "Status {:?}, {}, {}",
-            status,
-            status & STATUS_EMPTY,
-            status & STATUS_EMPTY == STATUS_EMPTY
-        );*/
         status & STATUS_EMPTY == STATUS_EMPTY
     }
 
@@ -73,8 +67,6 @@ impl RawMailbox {
     }
 
     pub(crate) fn write_address(&mut self, address: usize) {
-        debug!("p0: {:#04x}, as u32: {:#04x}", address, address as u32);
-        // todo something is unaligned
         unsafe {
             core::ptr::write_volatile(&mut self.write, address as u32);
         }
@@ -432,6 +424,7 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
     // This is needed because slices are fat pointers and I need to convert it to a thin pointer first.
     let raw_ptr_addr = raw_ptr.cast::<usize>();
     let raw_ptr_addr = raw_ptr_addr as usize;
+    // !0x0F is 1...10000
     let addr_clear_last_4_bits = raw_ptr_addr.bitand(!0x0F);
     // info!(
     //     "Raw pointer addr: {:#04x}, cleared: {:#04x}",
@@ -449,6 +442,9 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
     let raw_mailbox = unsafe { &mut *raw_mailbox_ptr };
     /* wait until we can write to the mailbox */
     while raw_mailbox.is_full() {
+        nop();
+        nop();
+        nop();
         nop();
     }
     // debug!(
@@ -469,19 +465,22 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
             nop();
             nop();
             nop();
-            nop();
-            nop();
         }
 
         if raw_mailbox.get_read() == final_addr as u32 {
             // debug!("Response is: {:?}", message.response_status());
             // debug!("Message: {:?}", message.0);
-            if message.response_status().ne(&ReqResp::Request) {
-                return message.is_response_successfull();
-            } else {
-                debug!("message stll contains a request !?");
-                return false;
-            }
+            return match message.response_status() {
+                ReqResp::Request => {
+                    debug!("message stll contains a request ?!");
+                    false
+                }
+                ReqResp::ResponseError => {
+                    error!("Something failed, the response is an error");
+                    false
+                }
+                ReqResp::ResponseSuccessful => true,
+            };
         }
     }
 }
