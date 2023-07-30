@@ -157,14 +157,13 @@ impl Enemies {
         let largest_enemy =
             self.enemies[(self.largest_col.1 * ENEMY_COLS + self.largest_col.0) as usize];
         let right_limit = self.direction == EnemiesDirection::Right
-            && largest_enemy.structure.coordinates.x() + ENEMY_WIDTH
-                >= (SCREEN_WIDTH - SCREEN_MARGIN);
+            && largest_enemy.get_coordinates().x() + ENEMY_WIDTH >= (SCREEN_WIDTH - SCREEN_MARGIN);
 
         self.lowest_col = (ENEMY_COLS, 0);
         self.largest_col = (0, 0);
 
         let left_limit = self.direction == EnemiesDirection::Left
-            && lowest_enemy.structure.coordinates.x() <= SCREEN_MARGIN;
+            && lowest_enemy.get_coordinates().x() <= SCREEN_MARGIN;
         if left_limit || right_limit {
             // move down one row, invert direction
             for x in 0..ENEMY_COLS {
@@ -172,9 +171,9 @@ impl Enemies {
                     let index = (y * ENEMY_COLS + x) as usize;
                     let enemy = &mut self.enemies[index];
 
-                    let new_y = enemy.structure.coordinates.y() + ENEMY_STEP_DOWN as u32;
-                    if enemy.structure.alive {
-                        enemy.move_to(Coordinates::new(enemy.structure.coordinates.x(), new_y));
+                    let new_y = enemy.get_coordinates().y() + ENEMY_STEP_DOWN as u32;
+                    if enemy.is_alive() {
+                        enemy.move_to(Coordinates::new(enemy.get_coordinates().x(), new_y));
                     }
                     if core::cmp::max(self.largest_col.0, x) == x {
                         self.largest_col = (x, y);
@@ -195,7 +194,7 @@ impl Enemies {
             for y in 0..ENEMY_ROWS {
                 let index = (y * ENEMY_COLS + x) as usize;
                 let e = &mut self.enemies[index];
-                if !e.structure.alive {
+                if !e.is_alive() {
                     continue;
                 }
 
@@ -211,7 +210,7 @@ impl Enemies {
         }
     }
     pub fn draw(&self, fb: &mut impl FrameBufferInterface) {
-        for enemy in self.enemies.iter().filter(|e| e.structure.alive) {
+        for enemy in self.enemies.iter().filter(|e| e.is_alive()) {
             enemy.draw(fb);
         }
     }

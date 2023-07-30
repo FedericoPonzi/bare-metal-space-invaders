@@ -184,7 +184,7 @@ where
         self.enemies.draw(self.fb);
         self.hero.draw(self.fb);
         self.shoots.draw(self.fb);
-        for b in self.barricades.iter().filter(|b| b.structure.alive) {
+        for b in self.barricades.iter().filter(|b| b.is_alive()) {
             b.draw(self.fb);
         }
         self.draw_score();
@@ -194,13 +194,24 @@ where
         const UI_LIFES_X: u32 = SCREEN_MARGIN / 2;
         const UI_LIFES_Y: u32 = SCREEN_MARGIN / 2;
         const UI_LIFES_X_OFFSET_BETWEEN_LIFES: u32 = 20;
-        for i in 0..self.current_lifes {
+        const COORDINATES: [Coordinates; 3] = [
+            Coordinates::new(
+                UI_LIFES_X + 0 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
+                UI_LIFES_Y,
+            ),
+            Coordinates::new(
+                UI_LIFES_X + 1 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
+                UI_LIFES_Y,
+            ),
+            Coordinates::new(
+                UI_LIFES_X + 2 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
+                UI_LIFES_Y,
+            ),
+        ];
+        for i in 0..self.current_lifes as usize {
             unsafe {
                 self.fb.display_image(
-                    Coordinates::new(
-                        UI_LIFES_X + i as u32 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
-                        UI_LIFES_Y,
-                    ),
+                    &COORDINATES[i],
                     HERO_ALIGNED.unwrap(),
                     HERO_WIDTH,
                     HERO_HEIGHT,
@@ -217,7 +228,7 @@ where
 
     /// It also check collision of aliens against barricades.
     fn check_game_over(&mut self) -> Option<EndOfGame> {
-        if !self.hero.structure.alive {
+        if !self.hero.is_alive() {
             if self.current_lifes == 0 {
                 info!("Game over, you lost! You're out of lifes.");
                 return Some(Lost(self.enemies.enemies_dead));
@@ -233,18 +244,15 @@ where
             return Some(Won(self.enemies.enemies_dead));
         }
 
-        for enemy in self.enemies.enemies.iter() {
-            if !enemy.structure.alive {
-                continue;
-            }
-            let reached_hero = enemy.structure.coordinates.y() + enemy.structure.height
-                >= self.hero.structure.coordinates.y();
+        for enemy in self.enemies.enemies.iter().filter(|e| e.is_alive()) {
+            let reached_hero = enemy.get_coordinates().y() + enemy.structure.height
+                >= self.hero.get_coordinates().y();
             if reached_hero {
                 info!("Game over, you lost! Enemy has reached the hero");
                 return Some(Lost(self.enemies.enemies_dead));
             }
-            let reached_barricades = enemy.structure.coordinates.y() + enemy.structure.height
-                >= self.barricades[0].structure.coordinates.y();
+            let reached_barricades = enemy.get_coordinates().y() + enemy.structure.height
+                >= self.barricades[0].get_coordinates().y();
             if reached_barricades && self.barricades_alive > 0 {
                 for b in self.barricades.iter_mut() {
                     b.structure.alive = false;

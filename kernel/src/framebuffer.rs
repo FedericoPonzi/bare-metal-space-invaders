@@ -44,10 +44,9 @@ impl UserInput for FrameBuffer {
 }
 
 impl FrameBufferInterface for FrameBuffer {
-    fn use_pixel(&mut self, point: Coordinates, color: Color) {
+    fn use_pixel(&mut self, x_usize: usize, y_usize: usize, color: Color) {
         let width = self.width();
-        let slice_ptr =
-            (&mut self.raw_buffer()[width * point.y_usize() + point.x_usize()..]).as_mut_ptr();
+        let slice_ptr = (&mut self.raw_buffer()[width * y_usize + x_usize..]).as_mut_ptr();
         unsafe {
             core::ptr::write_volatile(slice_ptr, color.rgb());
         }

@@ -63,7 +63,7 @@ impl Actor for Shoot {
     }
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         fb.draw_rect_fill(
-            self.structure.coordinates,
+            &self.structure.coordinates,
             self.structure.width,
             self.structure.height,
             SHOOT_BOX_COLOR,
@@ -90,7 +90,7 @@ impl Shoot {
     }
 
     pub(crate) fn out_of_screen(&self, screen_height: u32) -> bool {
-        let coordinates = self.structure.coordinates;
+        let coordinates = &self.structure.coordinates;
         (coordinates.y() as i32) - (self.structure.height as i32) <= 0
             || (coordinates.y() + self.structure.height) >= (screen_height)
     }
@@ -136,7 +136,7 @@ impl Shoots {
         if self.hero_shoots_alive >= SHOOT_HERO_MAX || shoot.is_none() {
             return;
         }
-        if let Some(sh) = self.hero_shoots.iter_mut().find(|sh| !sh.structure.alive) {
+        if let Some(sh) = self.hero_shoots.iter_mut().find(|sh| !sh.is_alive()) {
             sh.structure.coordinates = shoot.unwrap().structure.coordinates;
             sh.structure.alive = true;
             self.hero_shoots_alive += 1;
@@ -156,7 +156,7 @@ impl Shoots {
             .find(|(index, _e)| *index == enemy_shooting)
             .map(|(_index, e)| e)
         {
-            if let Some(sh) = self.enemy_shoots.iter_mut().find(|sh| !sh.structure.alive) {
+            if let Some(sh) = self.enemy_shoots.iter_mut().find(|sh| !sh.is_alive()) {
                 self.enemy_shoots_alive += 1;
                 sh.structure.coordinates = enemy.structure.coordinates;
                 sh.structure.alive = true;
@@ -169,7 +169,7 @@ impl Shoots {
             .enemy_shoots
             .iter_mut()
             .chain(self.hero_shoots.iter_mut())
-            .filter(|sh| sh.structure.alive)
+            .filter(|sh| sh.is_alive())
         {
             sh.move_forward(delta_ms);
             if sh.out_of_screen(SCREEN_HEIGHT) {
@@ -196,7 +196,7 @@ impl Shoots {
         // The issue here is that if the loop runs really slowly, then the shoot will overlap
         // with the enemies in very few positions. OFC, if the game is running with so few fps,
         // it would be unplayable anyway.
-        for shoot in &mut self.hero_shoots.iter_mut().filter(|sh| sh.structure.alive) {
+        for shoot in &mut self.hero_shoots.iter_mut().filter(|sh| sh.is_alive()) {
             if let Some((actor, is_enemy)) = enemies
                 .enemies
                 .iter_mut()
@@ -212,13 +212,13 @@ impl Shoots {
                 break;
             }
         }
-        for shoot in &mut self.enemy_shoots.iter_mut().filter(|sh| sh.structure.alive) {
+        for shoot in &mut self.enemy_shoots.iter_mut().filter(|sh| sh.is_alive()) {
             if shoot.is_hit(hero.get_structure()) {
                 shoot.structure.alive = false;
                 hero.structure.alive = false;
                 self.enemy_shoots_alive -= 1;
             }
-            for b in barricades.iter_mut().filter(|ba| ba.structure.alive) {
+            for b in barricades.iter_mut().filter(|ba| ba.is_alive()) {
                 if shoot.is_hit(b.get_structure()) {
                     shoot.structure.alive = false;
                     b.structure.alive = false;

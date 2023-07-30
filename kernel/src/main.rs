@@ -6,6 +6,8 @@
 #![feature(panic_info_message)]
 #![feature(asm_const)]
 #![feature(return_position_impl_trait_in_trait)]
+#![feature(portable_simd)]
+#![feature(asm)]
 
 extern crate alloc;
 

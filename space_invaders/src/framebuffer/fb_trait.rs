@@ -16,10 +16,12 @@ pub const UI_SCORE_COORDINATES: Coordinates = Coordinates::new(UI_SCORE_X, UI_SC
 pub const UI_SCORE_COLOR: Color = color::WHITE_COLOR;
 
 pub trait FrameBufferInterface {
-    fn draw_rect_fill(&mut self, point: Coordinates, width: u32, height: u32, color: Color) {
+    fn draw_rect_fill(&mut self, point: &Coordinates, width: u32, height: u32, color: Color) {
+        let width = width as usize;
+        let height = height as usize;
         for y in 0..height {
             for x in 0..width {
-                self.use_pixel(Coordinates::new(point.x() + x, point.y() + y), color);
+                self.use_pixel(point.x_usize() + x, point.y_usize() + y, color);
             }
         }
     }
@@ -35,10 +37,8 @@ pub trait FrameBufferInterface {
                     color
                 };
                 self.use_pixel(
-                    Coordinates::new(
-                        coordinates.x() + col_i as u32,
-                        coordinates.y() + row_i as u32,
-                    ),
+                    coordinates.x_usize() + col_i,
+                    coordinates.y_usize() + row_i,
                     actual_color,
                 );
             }
@@ -58,13 +58,15 @@ pub trait FrameBufferInterface {
 
     /// [x,y] the top left center
     fn draw_rect(&mut self, point: Coordinates, width: u32, height: u32, color: Color) {
+        let width = width as usize;
+        let height = height as usize;
         for y in 0..height {
-            self.use_pixel(Coordinates::new(point.x(), point.y() + y), color);
-            self.use_pixel(Coordinates::new(point.x() + width, point.y() + y), color);
+            self.use_pixel(point.x_usize(), point.y_usize() + y, color);
+            self.use_pixel(point.x_usize() + width, point.y_usize() + y, color);
         }
         for x in 0..width {
-            self.use_pixel(Coordinates::new(point.x() + x, point.y()), color);
-            self.use_pixel(Coordinates::new(point.x() + x, point.y() + height), color);
+            self.use_pixel(point.x_usize() + x, point.y_usize(), color);
+            self.use_pixel(point.x_usize() + x, point.y_usize() + height, color);
         }
     }
 
@@ -82,12 +84,12 @@ pub trait FrameBufferInterface {
         self.height_u32() as usize
     }
 
-    fn use_pixel(&mut self, point: Coordinates, color: Color) {
+    fn use_pixel(&mut self, x_usize: usize, y_usize: usize, color: Color) {
         let width = self.width();
-        self.raw_buffer()[width * point.y_usize() + point.x_usize()] = color.rgb();
+        self.raw_buffer()[width * y_usize + x_usize] = color.rgb();
     }
 
-    fn display_image(&mut self, top_left: Coordinates, image: &[u32], width: u32, height: u32) {
+    fn display_image(&mut self, top_left: &Coordinates, image: &[u32], width: u32, height: u32) {
         let fb_width = self.width();
         let width = width as usize;
         for y in 0..height as usize {

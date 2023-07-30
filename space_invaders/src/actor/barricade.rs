@@ -46,7 +46,7 @@ impl Actor for Barricade {
 
     fn draw(&self, fb: &mut impl FrameBufferInterface) {
         fb.draw_rect_fill(
-            self.structure.coordinates,
+            self.get_coordinates(),
             self.structure.width,
             self.structure.height,
             BARRICADE_BOX_COLOR,
