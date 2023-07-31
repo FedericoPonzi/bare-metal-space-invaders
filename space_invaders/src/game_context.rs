@@ -106,28 +106,13 @@ where
                 info!("Restarting game...");
                 return Restarted;
             }
-            /*info!(
-                "got input: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
 
-            //info!("Creating shoots");
             // 2. Handle shoots. Create if hero's or enemies' as needed.
             self.shoots.create_shoots(shoot, rnd, &mut self.enemies);
-            /* info!(
-                "created shots: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
 
-            //info!("handling movement");
             // 2. Movement
             self.handle_movements(hero_movement_direction, delta_ms);
-            /*info!(
-                "handled movement: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
 
-            //info!("Collision detection");
             // 3. collision detection
             self.shoots.check_collisions(
                 &mut self.hero,
@@ -135,42 +120,24 @@ where
                 &mut self.barricades,
                 &mut self.barricades_alive,
             );
-            /*info!(
-                "collision check: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
 
-            //info!("Checking if it's game over");
             // check if game is over.
             if let Some(ret) = self.check_game_over() {
                 return ret;
             }
-            /*info!(
-                "game over: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
+            #[cfg(feature = "no_std")]
             if now.sub(last_draw_loop).as_millis() >= 1000 / crate::FPS {
-                //info!("Drawing things");
+                info!(
+                    "delta since last draw: {}",
+                    self.time_manager.since(last_draw_loop).as_millis()
+                );
+                last_draw_loop = now;
+
                 // Draw things:
                 self.fb.clear_screen();
-                /*info!(
-                    "clear screen: {}",
-                    self.time_manager.since(self.last_loop).as_millis()
-                );*/
-
                 self.draw();
-                /*info!(
-                    "draw: {}",
-                    self.time_manager.since(self.last_loop).as_millis()
-                );*/
                 self.fb.update();
-                last_draw_loop = now;
             }
-
-            /*info!(
-                "fb update: {}",
-                self.time_manager.since(self.last_loop).as_millis()
-            );*/
 
             #[cfg(feature = "std")]
             let delta_next = Duration::from_millis(1000 / FPS as u64)
@@ -198,12 +165,9 @@ where
         const UI_LIFES_Y: u32 = SCREEN_MARGIN / 2;
         const UI_LIFES_X_OFFSET_BETWEEN_LIFES: u32 = 20;
         const COORDINATES: [Coordinates; 3] = [
+            Coordinates::new(UI_LIFES_X, UI_LIFES_Y),
             Coordinates::new(
-                UI_LIFES_X + 0 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
-                UI_LIFES_Y,
-            ),
-            Coordinates::new(
-                UI_LIFES_X + 1 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
+                UI_LIFES_X + (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
                 UI_LIFES_Y,
             ),
             Coordinates::new(

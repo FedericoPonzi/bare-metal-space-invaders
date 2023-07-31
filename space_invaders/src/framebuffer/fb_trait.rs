@@ -1,8 +1,7 @@
+use crate::framebuffer::color;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
-use crate::framebuffer::{color, Pixel};
 use crate::{SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
-use core::fmt::Write;
 use noto_sans_mono_bitmap::{get_raster, get_raster_width, FontWeight, RasterHeight};
 
 pub const UI_MAX_SCORE_LEN: usize = "High Score: 9999 - Current Score: 9999".len();
@@ -94,7 +93,7 @@ pub trait FrameBufferInterface {
         let width = width as usize;
         for y in 0..height as usize {
             for x in 0..width {
-                let pos: usize = (y * width + x);
+                let pos: usize = y * width + x;
                 let (x, y) = (x + top_left.x_usize(), y + top_left.y_usize());
                 let index = fb_width * y + x;
                 self.raw_buffer()[index] = image[pos];

@@ -24,7 +24,7 @@ pub use crate::time::TimeManager;
 pub use crate::time::TimeManagerInterface;
 
 use crate::actor::{
-    HeroMovementDirection, Shoot, ShootOwner, HERO_WIDTH, SHOOT_OFFSET_X_HERO, SHOOT_OFFSET_Y_HERO,
+    HeroMovementDirection, Shoot, ShootOwner, SHOOT_OFFSET_X_HERO, SHOOT_OFFSET_Y_HERO,
 };
 
 pub use crate::framebuffer::fb_trait::FrameBufferInterface;
