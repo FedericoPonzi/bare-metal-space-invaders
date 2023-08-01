@@ -1,15 +1,10 @@
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::{KeyPressedKeys, MemoryAllocator, UserInput, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::{KeyPressedKeys, UserInput, SCREEN_HEIGHT, SCREEN_WIDTH};
 use minifb::{Key, Window, WindowOptions};
 
 pub struct StdFrameBuffer {
     pub(crate) window: Window,
     buffer: Vec<u32>,
-}
-impl MemoryAllocator for StdFrameBuffer {
-    fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        unsafe { std::alloc::alloc(layout) }
-    }
 }
 impl UserInput for StdFrameBuffer {
     fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys> {

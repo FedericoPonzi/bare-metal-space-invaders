@@ -1,18 +1,17 @@
 use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::Coordinates;
-use crate::{
-    MemoryAllocator, SCREEN_HEIGHT_NO_MARGIN, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN,
-};
+use crate::{SCREEN_HEIGHT_NO_MARGIN, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN};
 
-const HERO: &[u8] =
-    include_bytes!("/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data");
-pub static mut HERO_ALIGNED: Option<&[u32]> = None;
+pub static HERO_SPRITE_U32: &[u32] = crate::include_bytes_align_as!(
+    u32,
+    "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data"
+);
 
 pub const HERO_WIDTH: u32 = 60;
 pub(crate) const HERO_HEIGHT: u32 = 29;
 
-pub const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) as u32 - HERO_WIDTH;
-pub const HERO_SPAWN_Y: u32 = SCREEN_HEIGHT_NO_MARGIN as u32 - HERO_HEIGHT;
+pub const HERO_SPAWN_X: u32 = (SCREEN_WIDTH / 2) - HERO_WIDTH;
+pub const HERO_SPAWN_Y: u32 = SCREEN_HEIGHT_NO_MARGIN - HERO_HEIGHT;
 
 const HERO_SPEED_MS: f64 = 200.0 / 1000.0; // pixels per millisecond
 
@@ -30,23 +29,15 @@ pub struct Hero {
 }
 
 impl Hero {
-    pub fn new<A>(fb: &A) -> Hero
-    where
-        A: MemoryAllocator,
-    {
-        unsafe {
-            if HERO_ALIGNED.is_none() {
-                HERO_ALIGNED = Some(Sprite::align_allocated_u32(HERO, fb));
-            }
-            Hero {
-                structure: ActorStructure {
-                    sprite: Some(Sprite::new(HERO_ALIGNED.unwrap())),
-                    width: HERO_WIDTH,
-                    height: HERO_HEIGHT,
-                    alive: true,
-                    coordinates: Coordinates::new(HERO_SPAWN_X, HERO_SPAWN_Y),
-                },
-            }
+    pub fn new() -> Hero {
+        Hero {
+            structure: ActorStructure {
+                sprite: Some(Sprite::new(HERO_SPRITE_U32)),
+                width: HERO_WIDTH,
+                height: HERO_HEIGHT,
+                alive: true,
+                coordinates: Coordinates::new(HERO_SPAWN_X, HERO_SPAWN_Y),
+            },
         }
     }
     fn move_left(&mut self, delta: u64) {

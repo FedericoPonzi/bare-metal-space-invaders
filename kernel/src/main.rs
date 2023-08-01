@@ -7,14 +7,11 @@
 #![feature(asm_const)]
 #![feature(return_position_impl_trait_in_trait)]
 
-extern crate alloc;
-
 use crate::logger::IrisLogger;
 use core::panic::PanicInfo;
 use cortex_a::asm;
 use cortex_a::registers::SCTLR_EL1;
 
-mod allocator;
 mod boot;
 mod framebuffer;
 mod logger;
@@ -50,22 +47,9 @@ unsafe fn kernel_init() -> ! {
     }
     println!("kernel_init");
     IRIS_LOGGER.init().unwrap();
-    allocator::ALLOCATOR.initialize();
     let max_clock_speed = max_clock_speed();
     info!("Kernel speed: {:?}", max_clock_speed);
     set_clock_speed(max_clock_speed.unwrap());
-
-    //panic!();
-    info!("kernel_init");
-    extern "C" {
-        static mut __text_end: usize;
-    }
-    let heap_start = __text_end;
-    let heap_end = 1 << 29; // 1 GB by default;
-    info!("heap_end: {}", heap_end);
-    let heap_size = heap_end - heap_start;
-    info!("Allocator initiated");
-
     main();
     panic!()
 }

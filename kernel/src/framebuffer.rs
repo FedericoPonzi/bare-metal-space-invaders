@@ -1,10 +1,7 @@
 use crate::mailbox::set_virtual_framebuffer_offset;
 use crate::mmio::PL011_UART_START;
 use crate::uart_pl011::PL011Uart;
-use core::alloc::GlobalAlloc;
-use space_invaders::{
-    Color, Coordinates, FrameBufferInterface, KeyPressedKeys, MemoryAllocator, UserInput,
-};
+use space_invaders::{Color, FrameBufferInterface, KeyPressedKeys, UserInput};
 
 /// RPI 3 framebuffer
 pub struct FrameBuffer {
@@ -19,15 +16,10 @@ pub struct FrameBuffer {
     pub fb_virtual_width: u32,
     /// Bits used by each pixel
     pub depth_bits: u32,
-    //todo: using the array instead of vec breaks the system init.
     pub uart: PL011Uart,
     pub current_index: u8,
 }
-impl MemoryAllocator for FrameBuffer {
-    fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        unsafe { crate::allocator::ALLOCATOR.alloc(layout) }
-    }
-}
+
 impl UserInput for FrameBuffer {
     fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys> {
         // TODO: no need to init it again.

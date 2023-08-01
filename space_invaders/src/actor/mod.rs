@@ -10,7 +10,6 @@ pub use shoot::*;
 
 use crate::framebuffer::coordinates::Coordinates;
 use crate::framebuffer::fb_trait::FrameBufferInterface;
-use crate::MemoryAllocator;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Sprite {
@@ -19,35 +18,6 @@ pub struct Sprite {
 impl Sprite {
     pub fn new(sprite: &'static [u32]) -> Self {
         Self { sprite }
-    }
-    pub fn align_allocated_u32(sprite: &'static [u8], fb: &impl MemoryAllocator) -> &'static [u32] {
-        let bytes: &'static [u8] = sprite;
-        let len = bytes.len() / core::mem::size_of::<u32>();
-
-        let alignment = 16; // Specify the desired alignment (e.g., 16 bytes)
-
-        let data_size = len * core::mem::size_of::<u32>();
-        let new_size = data_size + alignment - 1;
-
-        let original_data_ptr = bytes.as_ptr();
-        let new_data_ptr = {
-            let layout = core::alloc::Layout::from_size_align(new_size, alignment)
-                .expect("Failed to create layout");
-            let new_data_ptr = fb.alloc(layout);
-            assert!(
-                !new_data_ptr.is_null(),
-                "Failed to allocate memory with the desired alignment"
-            );
-            new_data_ptr
-        };
-
-        // Copy the original data to the newly allocated memory
-        unsafe {
-            core::ptr::copy_nonoverlapping(original_data_ptr, new_data_ptr, data_size);
-        }
-
-        // Create a slice from the new aligned memory
-        unsafe { core::slice::from_raw_parts(new_data_ptr as *const u32, len) }
     }
 }
 

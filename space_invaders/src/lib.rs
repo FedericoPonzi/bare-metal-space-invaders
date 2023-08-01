@@ -4,8 +4,6 @@
 #![cfg_attr(feature = "no_std", feature(format_args_nl))]
 #![warn(clippy::pedantic)]
 
-#[macro_use]
-extern crate alloc;
 extern crate core;
 
 pub mod actor;
@@ -15,7 +13,6 @@ mod game_context;
 mod platform;
 mod time;
 
-use core::alloc::Layout;
 use log::info;
 
 #[cfg(feature = "std")]
@@ -58,9 +55,6 @@ impl EndOfGame {
             Restarted => 0,
         }
     }
-}
-pub trait MemoryAllocator {
-    fn alloc(&self, layout: Layout) -> *mut u8;
 }
 pub trait UserInput {
     fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys>;
@@ -109,7 +103,7 @@ pub enum KeyPressedKeys {
 
 pub fn run_game<F>(mut fb: F, time_manager: &impl TimeManagerInterface)
 where
-    F: FrameBufferInterface + MemoryAllocator + UserInput,
+    F: FrameBufferInterface + UserInput,
 {
     let mut high_score = 0;
     let mut current_score: u32 = 0;
@@ -130,5 +124,30 @@ where
         if matches!(result, EndOfGame::Lost(_)) {
             current_score = 0;
         }
+    }
+}
+
+#[macro_use]
+mod macros {
+    #[repr(C)] // guarantee 'bytes' comes after '_align'
+    pub struct AlignedAs<Align, Bytes: ?Sized> {
+        pub _align: [Align; 0],
+        pub bytes: Bytes,
+    }
+    #[macro_export]
+    macro_rules! include_bytes_align_as {
+        ($align_ty:ty, $path:literal) => {{
+            // const block expression to encapsulate the static
+            use $crate::macros::AlignedAs;
+
+            // this assignment is made possible by CoerceUnsized
+            static ALIGNED: &AlignedAs<$align_ty, [u8]> = &AlignedAs {
+                _align: [],
+                bytes: *include_bytes!($path),
+            };
+
+            let as_u8 = &ALIGNED.bytes;
+            unsafe { core::slice::from_raw_parts(as_u8.as_ptr().cast::<u32>(), as_u8.len() / 4) }
+        }};
     }
 }

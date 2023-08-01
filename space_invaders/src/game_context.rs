@@ -1,5 +1,5 @@
 use crate::actor::{
-    Actor, Barricade, Enemies, Hero, HeroMovementDirection, Shoots, HERO_ALIGNED, HERO_HEIGHT,
+    Actor, Barricade, Enemies, Hero, HeroMovementDirection, Shoots, HERO_HEIGHT, HERO_SPRITE_U32,
     HERO_WIDTH, TOTAL_ENEMIES,
 };
 use crate::framebuffer::fb_trait::{
@@ -9,7 +9,7 @@ use crate::framebuffer::Coordinates;
 use crate::EndOfGame::{Lost, Restarted, Won};
 #[cfg(feature = "std")]
 use crate::FPS;
-use crate::{EndOfGame, MemoryAllocator, TimeManagerInterface, UserInput, SCREEN_MARGIN};
+use crate::{EndOfGame, TimeManagerInterface, UserInput, SCREEN_MARGIN};
 use core::cmp;
 use core::mem;
 use core::ops::Sub;
@@ -18,11 +18,8 @@ use log::info;
 
 pub struct GameContext<'a, T, F>
 where
-    F: FrameBufferInterface + MemoryAllocator + UserInput,
+    F: FrameBufferInterface + UserInput,
     T: TimeManagerInterface,
-    // F: FrameBufferInterface,
-    // A: MemoryAllocator,
-    // U: UserInput,
 {
     pub hero: Hero,
     pub high_score: u32,
@@ -43,7 +40,7 @@ where
 
 impl<'a, T, F> GameContext<'a, T, F>
 where
-    F: FrameBufferInterface + MemoryAllocator + UserInput,
+    F: FrameBufferInterface + UserInput,
     T: TimeManagerInterface,
 {
     pub fn new(
@@ -53,9 +50,9 @@ where
         time_manager: &'a T,
         current_lifes: u8,
     ) -> Self {
-        let enemies = Enemies::new(fb);
+        let enemies = Enemies::new();
         let shoots = Shoots::new();
-        let hero = Hero::new(fb);
+        let hero = Hero::new();
 
         let barricades = Barricade::create_barricades();
         let barricades_alive = barricades.len();
@@ -176,14 +173,8 @@ where
             ),
         ];
         for i in 0..self.current_lifes as usize {
-            unsafe {
-                self.fb.display_image(
-                    &COORDINATES[i],
-                    HERO_ALIGNED.unwrap(),
-                    HERO_WIDTH,
-                    HERO_HEIGHT,
-                );
-            }
+            self.fb
+                .display_image(&COORDINATES[i], &HERO_SPRITE_U32, HERO_WIDTH, HERO_HEIGHT);
         }
     }
 
