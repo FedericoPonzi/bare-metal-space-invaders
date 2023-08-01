@@ -1,18 +1,12 @@
 use crate::framebuffer::color;
 use crate::framebuffer::color::Color;
 use crate::framebuffer::coordinates::Coordinates;
-use crate::{SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
+use crate::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use noto_sans_mono_bitmap::{get_raster, get_raster_width, FontWeight, RasterHeight};
 
-pub const UI_MAX_SCORE_LEN: usize = "High Score: 9999 - Current Score: 9999".len();
 const LETTER_FONT_WEIGHT: FontWeight = FontWeight::Regular;
 const LETTER_FONT_HEIGHT: RasterHeight = RasterHeight::Size20;
 pub const LETTER_WIDTH: usize = get_raster_width(LETTER_FONT_WEIGHT, LETTER_FONT_HEIGHT);
-// +1 because it doesn't take into account the last letter's space to the end of the screen
-pub const UI_SCORE_X: u32 = SCREEN_WIDTH - (UI_MAX_SCORE_LEN as u32 + 1) * LETTER_WIDTH as u32;
-pub const UI_SCORE_Y: u32 = SCREEN_MARGIN / 2;
-pub const UI_SCORE_COORDINATES: Coordinates = Coordinates::new(UI_SCORE_X, UI_SCORE_Y);
-pub const UI_SCORE_COLOR: Color = color::WHITE_COLOR;
 
 pub trait FrameBufferInterface {
     fn draw_rect_fill(&mut self, point: &Coordinates, width: u32, height: u32, color: Color) {
@@ -41,17 +35,6 @@ pub trait FrameBufferInterface {
                     actual_color,
                 );
             }
-        }
-    }
-    // support single line writes only
-    // \n not supported, but we're not gonna use it anyway, save some time
-    fn write_ui(&mut self, coordinates: Coordinates, text: &str, color: Color) {
-        let mut x = coordinates.x();
-        let y = coordinates.y();
-        for c in text.chars() {
-            // right distance after each character
-            x += LETTER_WIDTH as u32;
-            self.write_char(c, Coordinates::new(x, y), color);
         }
     }
 

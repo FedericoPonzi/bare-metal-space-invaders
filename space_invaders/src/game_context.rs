@@ -1,17 +1,12 @@
 use crate::actor::{
-    Actor, Barricade, Enemies, Hero, HeroMovementDirection, Shoots, HERO_HEIGHT, HERO_SPRITE_U32,
-    HERO_WIDTH, TOTAL_ENEMIES,
-};
-use crate::framebuffer::fb_trait::{
-    FrameBufferInterface, UI_MAX_SCORE_LEN, UI_SCORE_COLOR, UI_SCORE_COORDINATES,
+    Actor, Barricade, Enemies, Hero, HeroMovementDirection, ScoreCount, Shoots, HERO_HEIGHT,
+    HERO_SPRITE_U32, HERO_WIDTH, TOTAL_ENEMIES,
 };
 use crate::framebuffer::Coordinates;
 use crate::EndOfGame::{Lost, Restarted, Won};
 #[cfg(feature = "std")]
 use crate::FPS;
-use crate::{EndOfGame, TimeManagerInterface, UserInput, SCREEN_MARGIN};
-use core::cmp;
-use core::mem;
+use crate::{EndOfGame, FrameBufferInterface, TimeManagerInterface, UserInput, SCREEN_MARGIN};
 use core::ops::Sub;
 use core::time::Duration;
 use log::info;
@@ -22,8 +17,6 @@ where
     T: TimeManagerInterface,
 {
     pub hero: Hero,
-    pub high_score: u32,
-    pub current_score: u32,
     pub time_manager: &'a T,
     fb: &'a mut F,
     //allocator: A,
@@ -36,6 +29,7 @@ where
     random: [u32; 20],
     random_index: usize,
     current_lifes: u8,
+    score_count: ScoreCount,
 }
 
 impl<'a, T, F> GameContext<'a, T, F>
@@ -56,6 +50,7 @@ where
 
         let barricades = Barricade::create_barricades();
         let barricades_alive = barricades.len();
+        let score_count = ScoreCount::new(current_score, high_score);
 
         let last_loop = time_manager.now();
 
@@ -67,8 +62,6 @@ where
 
         Self {
             hero,
-            high_score,
-            current_score,
             time_manager,
             fb,
             shoots,
@@ -79,6 +72,7 @@ where
             random,
             random_index,
             current_lifes,
+            score_count,
         }
     }
 
@@ -117,6 +111,7 @@ where
                 &mut self.barricades,
                 &mut self.barricades_alive,
             );
+            self.score_count.update(self.enemies.enemies_dead);
 
             // check if game is over.
             if let Some(ret) = self.check_game_over() {
@@ -154,7 +149,7 @@ where
         for b in self.barricades.iter().filter(|b| b.is_alive()) {
             b.draw(self.fb);
         }
-        self.draw_score();
+        self.score_count.draw(self.fb);
         self.draw_lifes();
     }
     fn draw_lifes(&mut self) {
@@ -218,72 +213,5 @@ where
             }
         }
         None
-    }
-
-    fn draw_score(&mut self) {
-        let current_score_updated = self.current_score
-            + u32::try_from(self.enemies.enemies_dead).expect("Conversion failed");
-        let high_score_updated = cmp::max(current_score_updated, self.high_score);
-        let mut message_buf = [0u8; UI_MAX_SCORE_LEN * mem::size_of::<char>()];
-        let score_ui =
-            format_to_buffer(&mut message_buf, high_score_updated, current_score_updated)
-                .expect("TODO: panic message");
-        self.fb
-            .write_ui(UI_SCORE_COORDINATES, score_ui, UI_SCORE_COLOR);
-    }
-}
-
-// Function to write formatted data into a buffer
-fn format_to_buffer(
-    buffer: &mut [u8],
-    high_score: u32,
-    current_score: u32,
-) -> Result<&str, core::fmt::Error> {
-    use core::fmt::Write;
-    let mut output = BufferWrite::new(buffer);
-    write!(
-        output,
-        "High Score: {high_score} - Current Score: {current_score}"
-    )?;
-
-    // Convert the buffer slice into a &str
-    let written_length = output.written_length();
-    let formatted_str = core::str::from_utf8(&buffer[..written_length]).unwrap();
-    Ok(formatted_str)
-}
-
-// A custom implementation of core::fmt::Write for writing into a buffer
-struct BufferWrite<'a> {
-    buffer: &'a mut [u8],
-    position: usize,
-}
-
-impl<'a> BufferWrite<'a> {
-    fn new(buffer: &'a mut [u8]) -> Self {
-        BufferWrite {
-            buffer,
-            position: 0,
-        }
-    }
-
-    // Get the total number of bytes written so far
-    fn written_length(&self) -> usize {
-        self.position
-    }
-}
-
-// Implement the Write trait for BufferWrite
-impl<'a> core::fmt::Write for BufferWrite<'a> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        let bytes = s.as_bytes();
-        let remaining_space = self.buffer.len() - self.position;
-
-        if bytes.len() <= remaining_space {
-            self.buffer[self.position..self.position + bytes.len()].copy_from_slice(bytes);
-            self.position += bytes.len();
-            Ok(())
-        } else {
-            Err(core::fmt::Error)
-        }
     }
 }

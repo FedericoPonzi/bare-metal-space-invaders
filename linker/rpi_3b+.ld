@@ -1,9 +1,3 @@
-/* SPDX-License-Identifier: MIT OR Apache-2.0
- *
- * Copyright (c) 2018-2021 Andre Richter <andre.o.richter@gmail.com>
- */
-
-/* The address at which the the kernel binary will be loaded by the Raspberry's firmware */
 __rpi_load_addr = 0x80000;
 
 ENTRY(__rpi_load_addr)
@@ -17,17 +11,13 @@ PHDRS
 SECTIONS
 {
     . =  __rpi_load_addr;
-                                        /*   ^             */
-                                        /*   | stack       */
-                                        /*   | growth      */
-                                        /*   | direction   */
-   __boot_core_stack_end_exclusive = .; /*   |             */
+   __boot_core_stack_end_exclusive = .;
     .text :
     {
         KEEP(*(.text._start))
-        *(.text._start_arguments) /* Constants (or statics in Rust speak) read by _start(). */
-        *(.text._start_rust)      /* The Rust entry point */
-        *(.text*)                 /* Everything else */
+        *(.text._start_arguments)
+        *(.text._start_rust)
+        *(.text*)
     } :segment_rx
 
     .rodata : ALIGN(8) { *(.rodata*) } :segment_rx
@@ -35,7 +25,6 @@ SECTIONS
 
     .data : { *(.data*) } :segment_rw
 
-    /* Section is zeroed in pairs of u64. Align start and end to 16 bytes */
     .bss : ALIGN(16)
     {
         __bss_start = .;

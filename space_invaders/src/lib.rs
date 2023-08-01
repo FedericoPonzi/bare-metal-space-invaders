@@ -147,6 +147,7 @@ mod macros {
             };
 
             let as_u8 = &ALIGNED.bytes;
+            // safety: the alignment is guaranteed by the above const block expression
             unsafe { core::slice::from_raw_parts(as_u8.as_ptr().cast::<u32>(), as_u8.len() / 4) }
         }};
     }

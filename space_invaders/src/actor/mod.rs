@@ -1,11 +1,14 @@
 mod barricade;
 mod enemy;
 mod hero;
+mod lifes;
+mod score_count;
 pub(crate) mod shoot;
 
 pub use barricade::*;
 pub use enemy::*;
 pub use hero::*;
+pub use score_count::ScoreCount;
 pub use shoot::*;
 
 use crate::framebuffer::coordinates::Coordinates;
