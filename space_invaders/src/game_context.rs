@@ -172,9 +172,9 @@ where
                 UI_LIFES_Y,
             ),
         ];
-        for i in 0..self.current_lifes as usize {
+        for coordinate in COORDINATES.iter().take(self.current_lifes as usize) {
             self.fb
-                .display_image(&COORDINATES[i], &HERO_SPRITE_U32, HERO_WIDTH, HERO_HEIGHT);
+                .display_image(coordinate, HERO_SPRITE_U32, HERO_WIDTH, HERO_HEIGHT);
         }
     }
 
