@@ -22,18 +22,10 @@ const ENEMY_SPEED_PER_MS: f64 = 20.0 / 1000.0; // pixels per second
 
 pub const TOTAL_ENEMIES: usize = (ENEMY_ROWS * ENEMY_COLS) as usize;
 
-static GREEN_ENEMY_SPRITE: &[u32] = crate::include_bytes_align_as!(
-    u32,
-    "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/green.data"
-);
-static ENEMY_RED_SPRITE: &[u32] = crate::include_bytes_align_as!(
-    u32,
-    "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/red.data"
-);
-pub static ENEMY_SPRITE: &[u32] = crate::include_bytes_align_as!(
-    u32,
-    "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/alien.data"
-);
+static GREEN_ENEMY_SPRITE: &[u32] =
+    crate::include_bytes_align_as!(u32, "../../../assets/green.data");
+static ENEMY_RED_SPRITE: &[u32] = crate::include_bytes_align_as!(u32, "../../../assets/red.data");
+pub static ENEMY_SPRITE: &[u32] = crate::include_bytes_align_as!(u32, "../../../assets/alien.data");
 
 #[derive(Copy, Clone, Debug)]
 pub struct Enemy {

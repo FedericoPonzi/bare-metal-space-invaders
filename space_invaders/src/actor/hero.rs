@@ -2,10 +2,8 @@ use crate::actor::{Actor, ActorStructure, Sprite};
 use crate::framebuffer::Coordinates;
 use crate::{SCREEN_HEIGHT_NO_MARGIN, SCREEN_MARGIN, SCREEN_WIDTH, SCREEN_WIDTH_NO_MARGIN};
 
-pub static HERO_SPRITE_U32: &[u32] = crate::include_bytes_align_as!(
-    u32,
-    "/home/fponzi/dev/rust/bare-metal-spaceinvaders/assets/hero.data"
-);
+pub static HERO_SPRITE_U32: &[u32] =
+    crate::include_bytes_align_as!(u32, "../../../assets/hero.data");
 
 pub const HERO_WIDTH: u32 = 60;
 pub(crate) const HERO_HEIGHT: u32 = 29;
