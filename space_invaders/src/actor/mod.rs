@@ -1,13 +1,14 @@
 mod barricade;
 mod enemy;
 mod hero;
-mod lifes;
+mod lives;
 mod score_count;
 pub(crate) mod shoot;
 
 pub use barricade::*;
 pub use enemy::*;
 pub use hero::*;
+pub use lives::*;
 pub use score_count::ScoreCount;
 pub use shoot::*;
 
@@ -32,6 +33,17 @@ pub struct ActorStructure {
     pub alive: bool,
     // Top left offset
     pub coordinates: Coordinates,
+}
+impl ActorStructure {
+    pub fn new(coordinates: Coordinates) -> Self {
+        Self {
+            coordinates,
+            width: 0,
+            height: 0,
+            alive: true,
+            sprite: None,
+        }
+    }
 }
 
 pub trait Actor {

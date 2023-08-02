@@ -1,12 +1,10 @@
 use crate::actor::{
-    Actor, Barricade, Enemies, Hero, HeroMovementDirection, ScoreCount, Shoots, HERO_HEIGHT,
-    HERO_SPRITE_U32, HERO_WIDTH, TOTAL_ENEMIES,
+    Actor, Barricade, Enemies, Hero, HeroMovementDirection, LivesCount, ScoreCount, Shoots,
 };
-use crate::framebuffer::Coordinates;
 use crate::EndOfGame::{Lost, Restarted, Won};
 #[cfg(feature = "std")]
 use crate::FPS;
-use crate::{EndOfGame, FrameBufferInterface, TimeManagerInterface, UserInput, SCREEN_MARGIN};
+use crate::{EndOfGame, FrameBufferInterface, TimeManagerInterface, UserInput};
 use core::ops::Sub;
 use core::time::Duration;
 use log::info;
@@ -19,8 +17,6 @@ where
     pub hero: Hero,
     pub time_manager: &'a T,
     fb: &'a mut F,
-    //allocator: A,
-    //user_input: U,
     shoots: Shoots,
     barricades: [Barricade; 56],
     barricades_alive: usize,
@@ -28,7 +24,7 @@ where
     enemies: Enemies,
     random: [u32; 20],
     random_index: usize,
-    current_lifes: u8,
+    lives_count: LivesCount,
     score_count: ScoreCount,
 }
 
@@ -42,7 +38,7 @@ where
         high_score: u32,
         current_score: u32,
         time_manager: &'a T,
-        current_lifes: u8,
+        current_lives: u8,
     ) -> Self {
         let enemies = Enemies::new();
         let shoots = Shoots::new();
@@ -51,6 +47,7 @@ where
         let barricades = Barricade::create_barricades();
         let barricades_alive = barricades.len();
         let score_count = ScoreCount::new(current_score, high_score);
+        let lives_count = LivesCount::new(current_lives);
 
         let last_loop = time_manager.now();
 
@@ -71,7 +68,7 @@ where
             enemies,
             random,
             random_index,
-            current_lifes,
+            lives_count,
             score_count,
         }
     }
@@ -150,27 +147,7 @@ where
             b.draw(self.fb);
         }
         self.score_count.draw(self.fb);
-        self.draw_lifes();
-    }
-    fn draw_lifes(&mut self) {
-        const UI_LIFES_X: u32 = SCREEN_MARGIN / 2;
-        const UI_LIFES_Y: u32 = SCREEN_MARGIN / 2;
-        const UI_LIFES_X_OFFSET_BETWEEN_LIFES: u32 = 20;
-        const COORDINATES: [Coordinates; 3] = [
-            Coordinates::new(UI_LIFES_X, UI_LIFES_Y),
-            Coordinates::new(
-                UI_LIFES_X + (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
-                UI_LIFES_Y,
-            ),
-            Coordinates::new(
-                UI_LIFES_X + 2 * (HERO_WIDTH + UI_LIFES_X_OFFSET_BETWEEN_LIFES),
-                UI_LIFES_Y,
-            ),
-        ];
-        for coordinate in COORDINATES.iter().take(self.current_lifes as usize) {
-            self.fb
-                .display_image(coordinate, HERO_SPRITE_U32, HERO_WIDTH, HERO_HEIGHT);
-        }
+        self.lives_count.draw(self.fb);
     }
 
     fn handle_movements(&mut self, hero_movement_direction: HeroMovementDirection, delta_ms: u64) {
@@ -182,17 +159,16 @@ where
     /// It also check collision of aliens against barricades.
     fn check_game_over(&mut self) -> Option<EndOfGame> {
         if !self.hero.is_alive() {
-            if self.current_lifes == 0 {
+            if self.lives_count.is_out_of_lives() {
                 info!("Game over, you lost! You're out of lifes.");
                 return Some(Lost(self.enemies.enemies_dead));
             }
-            self.current_lifes -= 1;
+            self.lives_count.decrease();
             //info!("Ouch! Lost a life, {} left", self.current_lifes);
             self.hero.structure.alive = true;
         }
 
-        let all_aliens_dead = TOTAL_ENEMIES - self.enemies.enemies_dead == 0;
-        if all_aliens_dead {
+        if self.enemies.all_dead() {
             info!("Game over, you won! All enemies dead.",);
             return Some(Won(self.enemies.enemies_dead));
         }

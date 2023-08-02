@@ -89,6 +89,9 @@ pub struct Enemies {
     direction: EnemiesDirection,
 }
 impl Enemies {
+    pub fn all_dead(&self) -> bool {
+        TOTAL_ENEMIES - self.enemies_dead == 0
+    }
     pub(crate) fn new() -> Self {
         Self {
             enemies: Self::init_enemies(),
