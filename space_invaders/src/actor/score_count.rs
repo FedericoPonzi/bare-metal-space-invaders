@@ -1,6 +1,6 @@
 use crate::actor::{Actor, ActorStructure};
 use crate::{Color, Coordinates, FrameBufferInterface};
-use std::{cmp, mem};
+use core::{cmp, mem};
 
 use crate::framebuffer::color;
 use crate::framebuffer::fb_trait::LETTER_WIDTH;
