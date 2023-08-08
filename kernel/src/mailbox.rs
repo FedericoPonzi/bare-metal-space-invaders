@@ -1,8 +1,7 @@
 use crate::framebuffer::FrameBuffer;
 use crate::mailbox::ReqResp::ResponseSuccessful;
 use crate::mmio::VIDEOCORE_MBOX_BASE;
-use crate::uart_pl011::PL011Uart;
-use crate::{debug, error, PL011_UART_START};
+use crate::{debug, error};
 
 use core::mem;
 use core::ops::BitAnd;
@@ -245,7 +244,6 @@ pub fn lfb_init<'a: 'static>(tentative: usize) -> Option<FrameBuffer> {
             is_rgb,
             is_brg: !is_rgb,
             fb_virtual_width: FB_VIRTUAL_WIDTH,
-            uart: unsafe { PL011Uart::new(PL011_UART_START) },
             current_index: 0,
         };
         info!(
@@ -288,8 +286,8 @@ pub fn set_virtual_framebuffer_offset(offset: u32) {
     let message = get_set_virtual_framebuffer_offset_message(offset);
 
     if send_message_sync(Channel::PROP, &message) {
-        let offset_x = message.0[5];
-        let offset_y = message.0[6];
+        //let offset_x = message.0[5];
+        //let offset_y = message.0[6];
         //info!("New offset: {}, y{}", offset_x, offset_y);
     } else {
         error!("Failed to sending message to set virtual framebuffer offset.");

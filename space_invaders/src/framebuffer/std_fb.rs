@@ -1,22 +1,30 @@
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::{KeyPressedKeys, UserInput, SCREEN_HEIGHT, SCREEN_WIDTH};
-use minifb::{Key, Window, WindowOptions};
+use log::info;
+use minifb::{Key, KeyRepeat, Window, WindowOptions};
 
 pub struct StdFrameBuffer {
     pub(crate) window: Window,
     buffer: Vec<u32>,
 }
 impl UserInput for StdFrameBuffer {
-    fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys> {
-        self.window
-            .get_keys()
-            .into_iter()
-            .filter_map(|key| match key {
+    fn get_input(&mut self) -> impl Iterator<Item = KeyPressedKeys> {
+        info!(
+            "self.window.get_key_pressed() : {:?} ",
+            self.window.get_keys()
+        );
+        let keys = self.window.get_keys();
+        self.window.update();
+        keys.into_iter().filter_map(|key| {
+            info!("key: {key:?}");
+            match key {
                 Key::A | Key::Left => Some(KeyPressedKeys::Left),
                 Key::D | Key::Right => Some(KeyPressedKeys::Right),
+                Key::R => Some(KeyPressedKeys::Restart),
                 Key::Space => Some(KeyPressedKeys::Shoot),
                 _ => None,
-            })
+            }
+        })
     }
 }
 impl Default for StdFrameBuffer {

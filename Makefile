@@ -13,8 +13,6 @@ RUSTC_MISC_ARGS   = -C target-cpu=cortex-a53
 BIN_NAME          = bare-metal-spaceinvaders
 
 # Export for build.rs
-export LINKER_FILE
-
 RUSTFLAGS          = -C link-arg=-T$(LINKER_FILE) $(RUSTC_MISC_ARGS)
 RUSTFLAGS_PEDANTIC = $(RUSTFLAGS) #-D warnings #-D missing_docs
 

@@ -14,12 +14,23 @@ top left corner is (0,0) and x increases going to the right, and y increases goi
 * space: shoot
 * r: restart game
 
-# TODO:
-* fix kernel code
-* shots rate limit.
-
 ---
 maybe:
 * alien ship in foreground top of the screen
 * animations
-* 
+
+
+## How to run it
+You can run it from your desktop using:
+```
+cargo run --package space_invaders --bin space_invaders --features std
+```
+Or if you want to run it on your Raspberry pi, follow the steps:
+
+1. install Raspberry Pi OS (ex Raspbian) to an sd card.
+2. run "./build.sh" to build a kernel8.img binary file.
+2. Replace kernel8.img in the sd with the one you just built.
+3. Connect the usb serial output to Raspberry pi like the image below. Connect the HDMI as well.
+4. Connect the usb to your laptop and wait
+
+Check https://github.com/rust-embedded/rust-raspberrypi-OS-tutorials#-usb-serial-output for additional guidance.

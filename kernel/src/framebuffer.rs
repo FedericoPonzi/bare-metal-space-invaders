@@ -1,6 +1,5 @@
 use crate::mailbox::set_virtual_framebuffer_offset;
-use crate::mmio::PL011_UART_START;
-use crate::uart_pl011::PL011Uart;
+use crate::PL011_UART;
 use space_invaders::{Color, FrameBufferInterface, KeyPressedKeys, UserInput};
 
 /// RPI 3 framebuffer
@@ -16,18 +15,16 @@ pub struct FrameBuffer {
     pub fb_virtual_width: u32,
     /// Bits used by each pixel
     pub depth_bits: u32,
-    pub uart: PL011Uart,
     pub current_index: u8,
 }
 
 impl UserInput for FrameBuffer {
-    fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys> {
-        // TODO: no need to init it again.
-        UARTIterator::new(unsafe { PL011Uart::new(PL011_UART_START) })
+    fn get_input(&mut self) -> impl Iterator<Item = KeyPressedKeys> {
+        UARTIterator::new()
             .filter_map(|ch| match ch {
                 'a' | 'A' => Some(KeyPressedKeys::Left),
                 'd' | 'D' => Some(KeyPressedKeys::Right),
-                //'r' | 'R' => Some(KeyPressedKeys::RestartGame),
+                'r' | 'R' => Some(KeyPressedKeys::Restart),
                 ' ' => Some(KeyPressedKeys::Shoot),
                 _ => None,
             })
@@ -36,14 +33,6 @@ impl UserInput for FrameBuffer {
 }
 
 impl FrameBufferInterface for FrameBuffer {
-    fn use_pixel(&mut self, x_usize: usize, y_usize: usize, color: Color) {
-        let width = self.width();
-        let slice_ptr = (&mut self.raw_buffer()[width * y_usize + x_usize..]).as_mut_ptr();
-        unsafe {
-            core::ptr::write_volatile(slice_ptr, color.rgb());
-        }
-    }
-
     fn raw_buffer(&mut self) -> &mut [u32] {
         let start = self.width() * self.current_height_offset();
         let end_of_buffer = start + self.single_screen_len();
@@ -54,8 +43,16 @@ impl FrameBufferInterface for FrameBuffer {
         self.width as usize
     }
 
+    fn use_pixel(&mut self, x_usize: usize, y_usize: usize, color: Color) {
+        let width = self.width();
+        let slice_ptr = (&mut self.raw_buffer()[width * y_usize + x_usize..]).as_mut_ptr();
+        unsafe {
+            core::ptr::write_volatile(slice_ptr, color.rgb());
+        }
+    }
+
     fn clear_screen(&mut self) {
-        let mut slice_ptr = (&mut self.raw_buffer()).as_mut_ptr();
+        let slice_ptr = (&mut self.raw_buffer()).as_mut_ptr();
         for i in 0..self.single_screen_len() {
             unsafe {
                 core::ptr::write_volatile(slice_ptr.add(i), 0);
@@ -87,16 +84,12 @@ impl FrameBuffer {
 
 // Define a custom iterator that reads characters from UART until None is encountered.
 struct UARTIterator {
-    uart: PL011Uart,
     max_input: usize,
 }
 
 impl UARTIterator {
-    fn new(uart: PL011Uart) -> Self {
-        UARTIterator {
-            uart,
-            max_input: 10,
-        }
+    fn new() -> Self {
+        UARTIterator { max_input: 10 }
     }
 }
 
@@ -107,7 +100,7 @@ impl Iterator for UARTIterator {
         if self.max_input == 0 {
             return None;
         }
-        match self.uart.read_char_unblocking() {
+        match PL011_UART.read_char_unblocking() {
             Some(ch) => {
                 self.max_input -= 1;
                 Some(ch)

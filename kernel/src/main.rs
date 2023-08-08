@@ -22,6 +22,7 @@ mod uart_pl011;
 
 use crate::mailbox::{max_clock_speed, set_clock_speed};
 use crate::mmio::PL011_UART_START;
+use crate::time::TIME_MANAGER;
 use crate::uart_pl011::PL011Uart;
 use log::{debug, error, info};
 use tock_registers::interfaces::ReadWriteable;
@@ -58,7 +59,7 @@ fn main() {
     info!("main");
     let fb = mailbox::lfb_init(0).expect("Failed to init framebuffer");
     println!("Starting game...");
-    space_invaders::run_game(fb, &time::BcmGpuTimer::new());
+    space_invaders::run_game(fb, &TIME_MANAGER);
 }
 
 #[panic_handler]

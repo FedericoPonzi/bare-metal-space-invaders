@@ -57,16 +57,17 @@ impl EndOfGame {
     }
 }
 pub trait UserInput {
-    fn get_input(&self) -> impl Iterator<Item = KeyPressedKeys>;
+    fn get_input(&mut self) -> impl Iterator<Item = KeyPressedKeys>;
 
     // get input from keyboard
     fn get_input_keys(
-        &self,
+        &mut self,
         hero_coordinates: &Coordinates,
     ) -> (HeroMovementDirection, Option<Shoot>) {
         let mut hero_movement_direction = HeroMovementDirection::Still;
         let mut shoot = None;
-        for key in &mut self.get_input() {
+        let mut restart = None;
+        for key in self.get_input() {
             match key {
                 KeyPressedKeys::Left => {
                     hero_movement_direction = HeroMovementDirection::Left;
@@ -82,18 +83,23 @@ pub trait UserInput {
                         ),
                         ShootOwner::Hero,
                     );
-                    //info!("pew!");
+                    info!("pew!");
                     shoot = Some(new_shoot);
                 }
                 KeyPressedKeys::Restart => {
-                    return (HeroMovementDirection::Still, None);
+                    info!("pressed restart");
+                    restart = Some((HeroMovementDirection::RestartGame, None));
                 }
             }
+        }
+        if restart.is_some() {
+            return restart.unwrap();
         }
         (hero_movement_direction, shoot)
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum KeyPressedKeys {
     Left,
     Right,
@@ -117,6 +123,7 @@ where
             MAX_LIVES,
         );
         let result = game_context.play();
+        let input = fb.get_input();
         current_score += result.to_score();
         if current_score > high_score {
             high_score = current_score;
