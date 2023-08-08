@@ -1,7 +1,7 @@
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::{KeyPressedKeys, UserInput, SCREEN_HEIGHT, SCREEN_WIDTH};
 use log::info;
-use minifb::{Key, KeyRepeat, Window, WindowOptions};
+use minifb::{Key, Window, WindowOptions};
 
 pub struct StdFrameBuffer {
     pub(crate) window: Window,

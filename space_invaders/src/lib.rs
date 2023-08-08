@@ -4,6 +4,8 @@
 #![cfg_attr(feature = "no_std", feature(format_args_nl))]
 #![warn(clippy::pedantic)]
 
+extern crate alloc;
+
 extern crate core;
 
 pub mod actor;
@@ -83,11 +85,11 @@ pub trait UserInput {
                         ),
                         ShootOwner::Hero,
                     );
-                    info!("pew!");
+                    //info!("pew!");
                     shoot = Some(new_shoot);
                 }
                 KeyPressedKeys::Restart => {
-                    info!("pressed restart");
+                    //info!("pressed restart");
                     restart = Some((HeroMovementDirection::RestartGame, None));
                 }
             }
@@ -99,7 +101,6 @@ pub trait UserInput {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
 pub enum KeyPressedKeys {
     Left,
     Right,
@@ -123,7 +124,6 @@ where
             MAX_LIVES,
         );
         let result = game_context.play();
-        let input = fb.get_input();
         current_score += result.to_score();
         if current_score > high_score {
             high_score = current_score;
