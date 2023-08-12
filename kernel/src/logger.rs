@@ -29,10 +29,7 @@ impl IrisLogger {
 
     pub fn init(&'static self) -> Result<(), SetLoggerError> {
         log::set_max_level(self.default_level);
-        unsafe {
-            let res = log::set_logger_racy(self);
-            res
-        }
+        unsafe { log::set_logger_racy(self) }
     }
 }
 impl Log for IrisLogger {
