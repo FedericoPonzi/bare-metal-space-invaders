@@ -8,6 +8,8 @@ use core::ops::BitAnd;
 use cortex_a::asm;
 use log::info;
 use space_invaders::{SCREEN_HEIGHT, SCREEN_WIDTH};
+use tock_registers::interfaces::{Readable, Writeable};
+use tock_registers::registers::{ReadOnly, WriteOnly};
 
 const LFB_MESSAGE_SIZE: usize = 35;
 /// Set physical (display) width/height
@@ -33,15 +35,15 @@ const FB_VIRTUAL_OFFSET_Y: u32 = 0;
 // TODO: wrap into registers map lib
 #[repr(C)]
 struct RawMailbox {
-    read: u32,
+    read: ReadOnly<u32>,
     _unused: u32,
     _unused2: u32,
     _unused3: u32,
     poll: u32,
     sender: u32,
-    status: u32,
+    status: ReadOnly<u32>,
     config: u32,
-    write: u32,
+    write: WriteOnly<u32>,
 }
 //const_assert_size!(RawMailbox, 36);
 
@@ -62,17 +64,15 @@ impl RawMailbox {
     }
 
     pub(crate) fn get_read(&self) -> u32 {
-        unsafe { core::ptr::read_volatile(&self.read) }
+        self.read.get()
     }
 
     pub(crate) fn write_address(&mut self, address: usize) {
-        unsafe {
-            core::ptr::write_volatile(&mut self.write, address as u32);
-        }
+        self.write.set(address as u32)
     }
 
     fn get_status(&self) -> u32 {
-        unsafe { core::ptr::read_volatile(&self.status) }
+        self.status.get()
     }
 }
 
@@ -424,20 +424,12 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
     let raw_ptr_addr = raw_ptr_addr as usize;
     // !0x0F is 1...10000
     let addr_clear_last_4_bits = raw_ptr_addr.bitand(!0x0F);
-    // info!(
-    //     "Raw pointer addr: {:#04x}, cleared: {:#04x}",
-    //     raw_ptr_addr, addr_clear_last_4_bits
-    // );
     let ch_clear_everything_but_last_4_vits = channel as usize & 0xF;
-    // info!(
-    //     "Channel: {:#04x}, cleared: {:#04x}",
-    //     channel as usize, ch_clear_everything_but_last_4_vits
-    // );
     let final_addr = addr_clear_last_4_bits | ch_clear_everything_but_last_4_vits;
-    //info!("Final addr : {:04x}", final_addr);
 
     let raw_mailbox_ptr = VIDEOCORE_MBOX_BASE as *mut RawMailbox;
     let raw_mailbox = unsafe { &mut *raw_mailbox_ptr };
+
     /* wait until we can write to the mailbox */
     while raw_mailbox.is_full() {
         nop();
@@ -445,15 +437,9 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
         nop();
         nop();
     }
-    // debug!(
-    //     "Message: {:?}, {:04x}",
-    //     message.0,
-    //     message.0.as_ptr() as usize
-    // );
-    //
-    // debug!("Mailbox is ready to accept messages...");
+
     raw_mailbox.write_address(final_addr);
-    //debug!("Ok, message was sent.. now we wait.");
+
     /* now wait for the response */
     loop {
         /* is there a response? */
@@ -466,8 +452,6 @@ fn send_message_sync<const T: usize>(channel: Channel, message: &Message<T>) -> 
         }
 
         if raw_mailbox.get_read() == final_addr as u32 {
-            // debug!("Response is: {:?}", message.response_status());
-            // debug!("Message: {:?}", message.0);
             return match message.response_status() {
                 ReqResp::Request => {
                     debug!("message stll contains a request ?!");
