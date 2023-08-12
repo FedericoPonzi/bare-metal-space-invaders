@@ -4,8 +4,6 @@
 #![cfg_attr(feature = "no_std", feature(format_args_nl))]
 #![warn(clippy::pedantic)]
 
-extern crate alloc;
-
 extern crate core;
 
 pub mod actor;

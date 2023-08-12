@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// Copyright (c) 2021-2022 Andre Richter <andre.o.richter@gmail.com>
+
 use core::cell::UnsafeCell;
 use core::marker::PhantomData;
 use core::{fmt, ops};
