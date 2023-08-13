@@ -2,6 +2,7 @@ use crate::actor::{Actor, ActorStructure, Sprite, HERO_HEIGHT};
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::framebuffer::Coordinates;
 use crate::{SCREEN_HEIGHT, SCREEN_MARGIN, SCREEN_WIDTH};
+use log::info;
 
 const ENEMY_WIDTH: u32 = 40;
 const ENEMY_HEIGHT: u32 = 32;
@@ -118,8 +119,8 @@ impl Enemies {
         enemies
     }
 
-    /// largest_x is the largest x coordinate of still alive enemy
-    /// lowest_x is the lowest x coordinate of still alive enemy
+    /// `largest_x` is the largest x coordinate of still alive enemy
+    /// `lowest_x` is the lowest x coordinate of still alive enemy
     pub(crate) fn move_enemies(&mut self, delta_ms: u64) {
         // determine the direction.
 
@@ -158,7 +159,7 @@ impl Enemies {
             return;
         }
         // speed up per dead enemy
-        let speedup = (self.enemies_dead as f64 * 2.0) / TOTAL_ENEMIES as f64;
+        let speedup = (1.0 + self.enemies_dead as f64 * 0.20) * ENEMY_SPEED_PER_MS;
         let offset_x = self.direction.to_offset(delta_ms, speedup);
 
         for x in 0..ENEMY_COLS {
@@ -200,14 +201,13 @@ impl EnemiesDirection {
             Left => Right,
         }
     }
-    fn to_offset(&self, delta_ms: u64, speedup: f64) -> f64 {
+    fn to_offset(self, delta_ms: u64, speedup: f64) -> f64 {
         use EnemiesDirection::{Left, Right};
         let delta_ms = delta_ms as f64;
         let sign = match self {
             Right => 1.0,
             Left => -1.0,
         };
-        let ret = sign * (ENEMY_SPEED_PER_MS + (speedup * ENEMY_SPEED_PER_MS)) * delta_ms;
-        ret
+        sign * (ENEMY_SPEED_PER_MS + speedup) * delta_ms
     }
 }

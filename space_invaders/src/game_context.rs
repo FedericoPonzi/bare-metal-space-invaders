@@ -42,7 +42,7 @@ where
     ) -> Self {
         let enemies = Enemies::new();
         let shoots = Shoots::new();
-        let hero = Hero::new();
+        let hero = Hero::default();
 
         let barricades = Barricade::create_barricades();
         let barricades_alive = barricades.len();
@@ -165,6 +165,7 @@ where
             }
             self.lives_count.decrease();
             //info!("Ouch! Lost a life, {} left", self.current_lifes);
+            self.shoots = Shoots::new();
             self.hero.structure.alive = true;
         }
 

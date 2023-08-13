@@ -25,10 +25,9 @@ pub enum HeroMovementDirection {
 pub struct Hero {
     pub(crate) structure: ActorStructure,
 }
-
-impl Hero {
-    pub fn new() -> Hero {
-        Hero {
+impl Default for Hero {
+    fn default() -> Self {
+        Self {
             structure: ActorStructure {
                 sprite: Some(Sprite::new(HERO_SPRITE_U32)),
                 width: HERO_WIDTH,
@@ -38,6 +37,8 @@ impl Hero {
             },
         }
     }
+}
+impl Hero {
     fn move_left(&mut self, delta: u64) {
         self.structure
             .coordinates

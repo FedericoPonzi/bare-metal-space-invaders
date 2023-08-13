@@ -92,8 +92,8 @@ pub trait UserInput {
                 }
             }
         }
-        if restart.is_some() {
-            return restart.unwrap();
+        if let Some(restart) = restart {
+            return restart;
         }
         (hero_movement_direction, shoot)
     }

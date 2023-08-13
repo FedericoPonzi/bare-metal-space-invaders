@@ -1,6 +1,5 @@
 use crate::framebuffer::fb_trait::FrameBufferInterface;
 use crate::{KeyPressedKeys, UserInput, SCREEN_HEIGHT, SCREEN_WIDTH};
-use log::info;
 use minifb::{Key, Window, WindowOptions};
 
 pub struct StdFrameBuffer {
@@ -9,21 +8,14 @@ pub struct StdFrameBuffer {
 }
 impl UserInput for StdFrameBuffer {
     fn get_input(&mut self) -> impl Iterator<Item = KeyPressedKeys> {
-        info!(
-            "self.window.get_key_pressed() : {:?} ",
-            self.window.get_keys()
-        );
         let keys = self.window.get_keys();
         self.window.update();
-        keys.into_iter().filter_map(|key| {
-            info!("key: {key:?}");
-            match key {
-                Key::A | Key::Left => Some(KeyPressedKeys::Left),
-                Key::D | Key::Right => Some(KeyPressedKeys::Right),
-                Key::R => Some(KeyPressedKeys::Restart),
-                Key::Space => Some(KeyPressedKeys::Shoot),
-                _ => None,
-            }
+        keys.into_iter().filter_map(|key| match key {
+            Key::A | Key::Left => Some(KeyPressedKeys::Left),
+            Key::D | Key::Right => Some(KeyPressedKeys::Right),
+            Key::R => Some(KeyPressedKeys::Restart),
+            Key::Space => Some(KeyPressedKeys::Shoot),
+            _ => None,
         })
     }
 }

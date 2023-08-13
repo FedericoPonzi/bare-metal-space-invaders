@@ -55,6 +55,7 @@ impl Actor for Barricade {
 }
 
 impl Barricade {
+    #[must_use]
     pub fn new(coordinates: Coordinates) -> Self {
         Barricade {
             structure: Self::structure(coordinates),
@@ -87,7 +88,6 @@ impl Barricade {
     }
 
     fn create_barricade(coordinates: Coordinates) -> [Barricade; TOTAL_BLOCKS_PER_BARRICADE] {
-        let mut barricades = [Barricade::new(coordinates); TOTAL_BLOCKS_PER_BARRICADE];
         /*
         shape:
             xxxx
@@ -101,6 +101,7 @@ impl Barricade {
                                         (0.0, 1.0), (1.0, 1.0), (2.0, 1.0), (3.0, 1.0), (4.0, 1.0), (5.0, 1.0),
                                         (0.0, 2.0), (1.0, 2.0),                         (4.0, 2.0), (5.0, 2.0),
         ];
+        let mut barricades = [Barricade::new(coordinates); TOTAL_BLOCKS_PER_BARRICADE];
 
         for (index, offset) in OFFSETS.iter().enumerate() {
             barricades[index]
